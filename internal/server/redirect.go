@@ -21,12 +21,12 @@ func RedirectHandler(svc *service.LinkService) http.HandlerFunc {
 			return
 		}
 
-		// url, err := svc.ResolveLink(r.Context(), slug)
-		// if err != nil {
-		// 	http.NotFound(w, r)
-		// 	return
-		// }
+		url, err := svc.ResolveLink(r.Context(), slug)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 
-		// http.Redirect(w, r, url, http.StatusFound)
+		http.Redirect(w, r, url, http.StatusFound)
 	}
 }

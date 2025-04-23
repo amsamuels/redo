@@ -1,4 +1,3 @@
-// internal/model/link.go
 package model
 
 type CreateLinkRequest struct {

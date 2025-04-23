@@ -1,4 +1,3 @@
-// internal/server/routes.go
 package server
 
 func (s *Server) routes() {

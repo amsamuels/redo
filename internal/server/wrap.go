@@ -1,4 +1,3 @@
-// internal/handler/wrap.go
 package server
 
 import (

@@ -1,4 +1,3 @@
-// internal/handler/link.go
 package server
 
 import (
