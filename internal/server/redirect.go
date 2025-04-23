@@ -1,4 +1,3 @@
-// internal/handler/redirect.go
 package server
 
 import (
@@ -27,6 +26,15 @@ func RedirectHandler(svc *service.LinkService) http.HandlerFunc {
 			return
 		}
 
+		_ = svc.TrackClick(
+			r.Context(),
+			slug,
+			r.RemoteAddr,
+			r.Referer(),
+			r.UserAgent(),
+		)
+
 		http.Redirect(w, r, url, http.StatusFound)
+
 	}
 }

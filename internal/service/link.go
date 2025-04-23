@@ -22,7 +22,6 @@ func (s *LinkService) CreateLink(ctx context.Context, companyID string, req mode
 	return err
 }
 
-// internal/service/link.go
 func (s *LinkService) ResolveLink(ctx context.Context, slug string) (string, error) {
 	var destination string
 
@@ -33,4 +32,15 @@ func (s *LinkService) ResolveLink(ctx context.Context, slug string) (string, err
 	}
 
 	return destination, nil
+}
+
+func (s *LinkService) TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error {
+	query := `
+		INSERT INTO clicks (id, link_id, ip, referrer, user_agent, created_at)
+		SELECT gen_random_uuid(), l.id, $2, $3, $4, now()
+		FROM links l
+		WHERE l.slug = $1
+	`
+	_, err := s.DB.ExecContext(ctx, query, slug, ip, referrer, userAgent)
+	return err
 }

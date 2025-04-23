@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+
 	"redo.ai/internal/server"
 	"redo.ai/internal/storage"
 )
