@@ -1,0 +1,4 @@
+-- +migrate Down
+DROP TABLE IF EXISTS clicks;
+DROP TABLE IF EXISTS links;
+DROP TABLE IF EXISTS companies;
