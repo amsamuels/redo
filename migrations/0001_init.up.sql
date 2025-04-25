@@ -2,31 +2,26 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 
-CREATE TABLE users (
+-- Users table (primary)
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
-    name TEXT,
-    created_at TIMESTAMPTZ DEFAULT now()
-);
-
-
-CREATE TABLE companies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
+    business_name TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE links (
+-- Links table
+CREATE TABLE IF NOT EXIST links (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     slug TEXT UNIQUE NOT NULL,
     destination TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE clicks (
+-- Clicks table
+CREATE TABLE IF NOT EXIST clicks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
     ip TEXT,

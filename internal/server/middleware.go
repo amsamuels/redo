@@ -73,7 +73,7 @@ func EnsureValidToken() func(http.Handler) http.Handler {
 }
 
 // WithCompany extracts the sub from the token and ensures a company exists.
-func WithCompany(db *sql.DB) func(http.Handler) http.Handler {
+func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, ok := r.Context().Value(jwtmiddleware.ContextKey{}).(*jwt.Token)

@@ -6,10 +6,9 @@ import (
 	"strings"
 
 	"redo.ai/internal/model"
-	"redo.ai/internal/service"
 )
 
-func CreateLinkHandler(svc *service.LinkService) http.HandlerFunc {
+func (s *Server) CreateLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -28,7 +27,7 @@ func CreateLinkHandler(svc *service.LinkService) http.HandlerFunc {
 			return
 		}
 
-		if err := svc.CreateLink(r.Context(), companyID, req); err != nil {
+		if err := s.LinkSvc.CreateLink(r.Context(), companyID, req); err != nil {
 			http.Error(w, "Failed to create link", http.StatusInternalServerError)
 			return
 		}
@@ -37,7 +36,7 @@ func CreateLinkHandler(svc *service.LinkService) http.HandlerFunc {
 	}
 }
 
-func RedirectHandler(svc *service.LinkService) http.HandlerFunc {
+func (s *Server) RedirectHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/go/") {
 			http.NotFound(w, r)
@@ -50,13 +49,13 @@ func RedirectHandler(svc *service.LinkService) http.HandlerFunc {
 			return
 		}
 
-		url, err := svc.ResolveLink(r.Context(), slug)
+		url, err := s.LinkSvc.ResolveLink(r.Context(), slug)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
 
-		_ = svc.TrackClick(
+		_ = s.LinkSvc.TrackClick(
 			r.Context(),
 			slug,
 			r.RemoteAddr,
@@ -69,7 +68,7 @@ func RedirectHandler(svc *service.LinkService) http.HandlerFunc {
 	}
 }
 
-func GetMetricsHandler(svc *service.LinkService) http.HandlerFunc {
+func (s *Server) GetMetricsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -82,7 +81,7 @@ func GetMetricsHandler(svc *service.LinkService) http.HandlerFunc {
 			return
 		}
 
-		metrics, err := svc.GetClickCount(r.Context(), slug)
+		metrics, err := s.LinkSvc.GetClickCount(r.Context(), slug)
 		if err != nil {
 			http.Error(w, "Error fetching metrics", http.StatusInternalServerError)
 			return

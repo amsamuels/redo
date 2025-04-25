@@ -10,17 +10,20 @@ import (
 type Server struct {
 	DB         *sql.DB
 	LinkSvc    *service.LinkService
+	UserSvc    *service.UserService
 	Mux        *http.ServeMux
 	HttpServer *http.Server
 }
 
 func New(db *sql.DB) *Server {
 	linkSvc := &service.LinkService{DB: db}
+	userSvc := &service.UserService{DB: db}
 	mux := http.NewServeMux()
 
 	srv := &Server{
 		DB:      db,
 		LinkSvc: linkSvc,
+		UserSvc: userSvc,
 		Mux:     mux,
 	}
 

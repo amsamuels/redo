@@ -2,9 +2,16 @@ package server
 
 func (s *Server) routes() {
 	auth := EnsureValidToken()
-	withCompany := WithCompany(s.DB)
+	withUser := WithUser(s.DB)
 
-	s.Mux.Handle("/api/links", auth(withCompany(Wrap(CreateLinkHandler(s.LinkSvc)))))
-	s.Mux.Handle("/api/metrics/", auth(withCompany(Wrap(GetMetricsHandler(s.LinkSvc)))))
-	s.Mux.HandleFunc("/go/", RedirectHandler(s.LinkSvc)) // public redirect
+	// Public routes (no auth)
+	s.Mux.HandleFunc("/go/", s.RedirectHandler())
+
+	// User-related
+	s.Mux.Handle("/api/users/signup", s.SignUpHandler())
+	s.Mux.Handle("/api/users/login", s.LoginHandler())
+
+	// Link-related (protected by auth)
+	s.Mux.Handle("/api/links", auth(withUser(s.CreateLinkHandler())))
+	s.Mux.Handle("/api/links/", auth(withUser(s.GetMetricsHandler())))
 }
