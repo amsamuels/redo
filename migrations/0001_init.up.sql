@@ -1,6 +1,16 @@
 -- +migrate Up
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+
 CREATE TABLE companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,

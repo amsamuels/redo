@@ -44,3 +44,20 @@ func (s *LinkService) TrackClick(ctx context.Context, slug, ip, referrer, userAg
 	_, err := s.DB.ExecContext(ctx, query, slug, ip, referrer, userAgent)
 	return err
 }
+
+func (s *LinkService) GetClickCount(ctx context.Context, slug string) (int, error) {
+	var count int
+
+	query := `
+		SELECT COUNT(*)
+		FROM clicks c
+		JOIN links l ON c.link_id = l.id
+		WHERE l.slug = $1
+	`
+	err := s.DB.QueryRowContext(ctx, query, slug).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
