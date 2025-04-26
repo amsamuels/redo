@@ -1,5 +1,4 @@
-// internal/middleware/middleware.go
-package server
+package middleware
 
 import (
 	"context"
@@ -8,20 +7,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/golang-jwt/jwt/v5"
+	"redo.ai/internal/utils"
 )
 
 type ctxKey string
 
-const (
-	userIDKey ctxKey = "user_id"
-)
+const userIDKey ctxKey = "user_id"
 
 // CustomClaims defines any custom claims you want to use.
 type CustomClaims struct {
@@ -72,54 +69,46 @@ func EnsureValidToken() func(http.Handler) http.Handler {
 	}
 }
 
+// WithUser populates the user ID into the request context.
 func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, ok := r.Context().Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
 			if !ok || token == nil {
-				writeJSONError(w, http.StatusUnauthorized, "missing token")
+				utils.WriteJSONError(w, http.StatusUnauthorized, "missing token")
 				return
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				writeJSONError(w, http.StatusUnauthorized, "invalid token claims")
+				utils.WriteJSONError(w, http.StatusUnauthorized, "invalid token claims")
 				return
 			}
 
 			sub, ok := claims["sub"].(string)
 			if !ok || sub == "" {
-				writeJSONError(w, http.StatusUnauthorized, "missing sub claim")
+				utils.WriteJSONError(w, http.StatusUnauthorized, "missing sub claim")
 				return
 			}
 
 			var userID string
 			err := db.QueryRow(`SELECT id FROM users WHERE email = $1`, sub).Scan(&userID)
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusUnauthorized, "user not found")
+				utils.WriteJSONError(w, http.StatusUnauthorized, "user not found")
 				return
 			} else if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "database error")
+				utils.WriteJSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), ctxKey("user_id"), userID)
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
+// UserIDFromContext retrieves the user ID from the request context.
 func UserIDFromContext(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(userIDKey).(string)
 	return id, ok
-}
-
-func (c CustomClaims) HasScope(expectedScope string) bool {
-	result := strings.Split(c.Scope, " ")
-	for _, s := range result {
-		if s == expectedScope {
-			return true
-		}
-	}
-	return false
 }

@@ -5,7 +5,10 @@ import (
 	"net/http"
 
 	lru "github.com/hashicorp/golang-lru"
-	"redo.ai/internal/service"
+
+	"redo.ai/internal/service/link"
+	"redo.ai/internal/service/user"
+	"redo.ai/internal/utils"
 )
 
 type Server struct {
@@ -15,11 +18,13 @@ type Server struct {
 	cache      *lru.Cache
 	Mux        *http.ServeMux
 	HttpServer *http.Server
+	Handler    http.Handler
+	HC         *HandlerContainer
 }
 
 func New(db *sql.DB) *Server {
-	linkSvc := &service.LinkService{DB: db}
-	userSvc := &service.UserService{DB: db}
+	linkSvc := &link.LinkService{DB: db}
+	userSvc := &user.UserService{DB: db}
 
 	mux := http.NewServeMux()
 
@@ -31,9 +36,13 @@ func New(db *sql.DB) *Server {
 		UserSvc: userSvc,
 		Mux:     mux,
 		cache:   c,
+		HC:      NewHandlerContainer(*linkSvc, *userSvc, c),
 	}
 
 	srv.routes()
+
+	// Apply logging middleware globally
+	srv.Handler = utils.LoggingWrap(mux)
 
 	return srv
 }
@@ -41,8 +50,7 @@ func New(db *sql.DB) *Server {
 func (s *Server) Start(addr string) error {
 	s.HttpServer = &http.Server{
 		Addr:    addr,
-		Handler: s.Mux,
+		Handler: s.Handler,
 	}
-
 	return s.HttpServer.ListenAndServe()
 }

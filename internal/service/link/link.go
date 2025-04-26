@@ -1,5 +1,5 @@
 // internal/service/link.go
-package service
+package link
 
 import (
 	"context"

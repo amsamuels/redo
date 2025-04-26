@@ -1,38 +1,33 @@
-package server
+package handlers
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/golang-jwt/jwt/v5"
+	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/model"
+	"redo.ai/internal/service/user"
+	"redo.ai/internal/utils"
 )
 
-// SignUpHandler - creates a new user with provided business name and associates to Auth0 sub (email as identifier).
-type SignUpRequest struct {
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	BusinessName string `json:"business_name"`
+type AuthHandler struct {
+	UserService user.UserService
+	Cache       *lru.Cache
 }
 
-type LoginRequest struct {
-	Email string `json:"email"`
-}
-
-type UserResponse struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	Name         string    `json:"name"`
-	BusinessName string    `json:"business_name"`
-	CreatedAt    time.Time `json:"created_at"`
+func NewAuthHandler(userService user.UserService, c *lru.Cache) *AuthHandler {
+	return &AuthHandler{
+		UserService: userService,
+		Cache:       c,
+	}
 }
 
 // SignUpHandler - Creates a new user (requires valid JWT and business name).
-func (s *Server) SignUpHandler() http.HandlerFunc {
+func (au *AuthHandler) SignUpHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -41,25 +36,26 @@ func (s *Server) SignUpHandler() http.HandlerFunc {
 
 		email, ok := SubFromContext(r.Context())
 		if !ok {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Unauthorized")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		var req model.SignUpRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		req.Email = email // Force the email from Auth0 token, ignore any email from body.
 
-		err := s.UserSvc.SignUp(r.Context(), req)
+		err := au.UserService.SignUp(r.Context(), req)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusConflict, "User already exists")
+				utils.WriteJSONError(w, http.StatusConflict, "User already exists")
 				return
 			}
-			writeJSONError(w, http.StatusInternalServerError, "Failed to create user")
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to create user")
 			return
 		}
 
@@ -70,7 +66,7 @@ func (s *Server) SignUpHandler() http.HandlerFunc {
 }
 
 // LoginHandler - Fetches user details from database based on Auth0 sub (email).
-func (s *Server) LoginHandler() http.HandlerFunc {
+func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -83,13 +79,13 @@ func (s *Server) LoginHandler() http.HandlerFunc {
 			return
 		}
 
-		user, err := s.UserSvc.GetByEmail(r.Context(), email)
+		user, err := au.UserService.GetByEmail(r.Context(), email)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusUnauthorized, "User not found")
+				utils.WriteJSONError(w, http.StatusUnauthorized, "User not found")
 				return
 			}
-			writeJSONError(w, http.StatusInternalServerError, "Database error")
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Database error")
 			return
 		}
 
