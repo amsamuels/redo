@@ -20,7 +20,7 @@ import (
 type ctxKey string
 
 const (
-	companyIDKey ctxKey = "company_id"
+	userIDKey ctxKey = "user_id"
 )
 
 // CustomClaims defines any custom claims you want to use.
@@ -72,53 +72,45 @@ func EnsureValidToken() func(http.Handler) http.Handler {
 	}
 }
 
-// WithCompany extracts the sub from the token and ensures a company exists.
 func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, ok := r.Context().Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
 			if !ok || token == nil {
-				http.Error(w, "Token not found in context", http.StatusUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, "missing token")
 				return
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, "invalid token claims")
 				return
 			}
 
 			sub, ok := claims["sub"].(string)
 			if !ok || sub == "" {
-				http.Error(w, "Missing subject claim", http.StatusUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, "missing sub claim")
 				return
 			}
 
-			var companyID string
-			err := db.QueryRow(`SELECT id FROM companies WHERE email = $1`, sub).Scan(&companyID)
+			var userID string
+			err := db.QueryRow(`SELECT id FROM users WHERE email = $1`, sub).Scan(&userID)
 			if err == sql.ErrNoRows {
-				err = db.QueryRow(`
-					INSERT INTO companies (id, name, email)
-					VALUES (gen_random_uuid(), $1, $1)
-					RETURNING id
-				`, sub).Scan(&companyID)
-				if err != nil {
-					http.Error(w, "Unable to create company", http.StatusInternalServerError)
-					return
-				}
+				writeJSONError(w, http.StatusUnauthorized, "user not found")
+				return
 			} else if err != nil {
-				http.Error(w, "Database error", http.StatusInternalServerError)
+				writeJSONError(w, http.StatusInternalServerError, "database error")
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), companyIDKey, companyID)
+			ctx := context.WithValue(r.Context(), ctxKey("user_id"), userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func CompanyIDFromContext(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(companyIDKey).(string)
+func UserIDFromContext(ctx context.Context) (string, bool) {
+	id, ok := ctx.Value(userIDKey).(string)
 	return id, ok
 }
 
@@ -130,11 +122,4 @@ func (c CustomClaims) HasScope(expectedScope string) bool {
 		}
 	}
 	return false
-}
-
-func Wrap(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL.Path)
-		h(w, r)
-	}
 }

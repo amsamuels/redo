@@ -6,6 +6,7 @@ func (s *Server) routes() {
 
 	// Public routes (no auth)
 	s.Mux.HandleFunc("/go/", s.RedirectHandler())
+	s.Mux.HandleFunc("/api/health", s.HealthHandler())
 
 	// User-related
 	s.Mux.Handle("/api/users/signup", s.SignUpHandler())
@@ -14,4 +15,6 @@ func (s *Server) routes() {
 	// Link-related (protected by auth)
 	s.Mux.Handle("/api/links", auth(withUser(s.CreateLinkHandler())))
 	s.Mux.Handle("/api/links/", auth(withUser(s.GetMetricsHandler())))
+	s.Mux.Handle("/api/links", auth(withUser(s.ListLinksHandler())))
+
 }

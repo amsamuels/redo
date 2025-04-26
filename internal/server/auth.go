@@ -31,10 +31,17 @@ type UserResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// SignUpHandler - Creates a new user (requires valid JWT and business name).
 func (s *Server) SignUpHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		email, ok := SubFromContext(r.Context())
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -44,9 +51,15 @@ func (s *Server) SignUpHandler() http.HandlerFunc {
 			return
 		}
 
+		req.Email = email // Force the email from Auth0 token, ignore any email from body.
+
 		err := s.UserSvc.SignUp(r.Context(), req)
 		if err != nil {
-			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			if err == sql.ErrNoRows {
+				writeJSONError(w, http.StatusConflict, "User already exists")
+				return
+			}
+			writeJSONError(w, http.StatusInternalServerError, "Failed to create user")
 			return
 		}
 
@@ -56,7 +69,7 @@ func (s *Server) SignUpHandler() http.HandlerFunc {
 	}
 }
 
-// LoginHandler - fetches user info to confirm they exist, otherwise returns unauthorized.
+// LoginHandler - Fetches user details from database based on Auth0 sub (email).
 func (s *Server) LoginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -64,22 +77,23 @@ func (s *Server) LoginHandler() http.HandlerFunc {
 			return
 		}
 
-		var req model.LoginRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+		email, ok := SubFromContext(r.Context())
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		user, err := s.UserSvc.Login(r.Context(), req)
-		if err == sql.ErrNoRows {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		} else if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
+		user, err := s.UserSvc.GetByEmail(r.Context(), email)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				writeJSONError(w, http.StatusUnauthorized, "User not found")
+				return
+			}
+			writeJSONError(w, http.StatusInternalServerError, "Database error")
 			return
 		}
 
-		resp := UserResponse{
+		resp := model.User{
 			ID:           user.ID,
 			Email:        user.Email,
 			Name:         user.Name,

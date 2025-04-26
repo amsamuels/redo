@@ -4,13 +4,15 @@ import (
 	"database/sql"
 	"net/http"
 
+	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/service"
 )
 
 type Server struct {
 	DB         *sql.DB
-	LinkSvc    *service.LinkService
-	UserSvc    *service.UserService
+	LinkSvc    LinkService
+	UserSvc    UserService
+	cache      *lru.Cache
 	Mux        *http.ServeMux
 	HttpServer *http.Server
 }
@@ -18,16 +20,20 @@ type Server struct {
 func New(db *sql.DB) *Server {
 	linkSvc := &service.LinkService{DB: db}
 	userSvc := &service.UserService{DB: db}
+
 	mux := http.NewServeMux()
+
+	c, _ := lru.New(10000) // cache up to 10,000 links
 
 	srv := &Server{
 		DB:      db,
-		LinkSvc: linkSvc,
+		LinkSvc: linkSvc, // the concrete implementations
 		UserSvc: userSvc,
 		Mux:     mux,
+		cache:   c,
 	}
 
-	srv.routes() // register all handlers
+	srv.routes()
 
 	return srv
 }

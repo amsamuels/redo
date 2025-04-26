@@ -21,7 +21,8 @@ func (s *UserService) SignUp(ctx context.Context, req model.SignUpRequest) error
 	return err
 }
 
-func (s *UserService) Login(ctx context.Context, req model.LoginRequest) (*model.User, error) {
+// GetByEmail retrieves a user by email.
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 
 	query := `
@@ -29,11 +30,13 @@ func (s *UserService) Login(ctx context.Context, req model.LoginRequest) (*model
         FROM users
         WHERE email = $1
     `
-	err := s.DB.QueryRowContext(ctx, query, req.Email).
-		Scan(&user.ID, &user.Email, &user.Name, &user.BusinessName, &user.CreatedAt)
+	var createdAt time.Time
+	err := s.DB.QueryRowContext(ctx, query, email).
+		Scan(&user.ID, &user.Email, &user.Name, &user.BusinessName, &createdAt)
 	if err != nil {
 		return nil, err
 	}
 
+	user.CreatedAt = createdAt.Format(time.RFC3339)
 	return &user, nil
 }

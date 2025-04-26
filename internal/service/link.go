@@ -22,6 +22,31 @@ func (s *LinkService) CreateLink(ctx context.Context, companyID string, req mode
 	return err
 }
 
+func (s *LinkService) ListLinks(ctx context.Context, userID string) ([]model.Link, error) {
+	query := `
+        SELECT slug, destination, created_at
+        FROM links
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+    `
+	rows, err := s.DB.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var links []model.Link
+	for rows.Next() {
+		var link model.Link
+		if err := rows.Scan(&link.Slug, &link.Destination, &link.CreatedAt); err != nil {
+			return nil, err
+		}
+		links = append(links, link)
+	}
+
+	return links, nil
+}
+
 func (s *LinkService) ResolveLink(ctx context.Context, slug string) (string, error) {
 	var destination string
 
