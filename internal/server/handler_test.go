@@ -8,9 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/api/handlers"
 	"redo.ai/internal/model"
-	"redo.ai/internal/server" // <--- ADD THIS
+	// <--- ADD THIS
 )
 
 // Local test version of userIDKey (because we can't import unexported things)
@@ -43,11 +44,10 @@ func (m *mockLinkService) ListLinks(ctx context.Context, userID string) ([]model
 
 // Test CreateLinkHandler with good and bad inputs
 func TestCreateLinkHandler(t *testing.T) {
+
 	mockLinkSvc := &mockLinkService{}
-
-	handler := handlers.NewLinkHandler(mockLinkSvc, nil).CreateLinkHandler()
-	handler := server.CreateLinkHandler()
-
+	cache, _ := lru.New(100) // Mock cache
+	handler := handlers.NewLinkHandler(mockLinkSvc, cache).CreateLinkHandler()
 	tests := []struct {
 		name           string
 		payload        model.CreateLinkRequest
