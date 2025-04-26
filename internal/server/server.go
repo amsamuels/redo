@@ -13,8 +13,8 @@ import (
 
 type Server struct {
 	DB         *sql.DB
-	LinkSvc    LinkService
-	UserSvc    UserService
+	LinkSvc    *link.LinkService
+	UserSvc    *user.UserService
 	cache      *lru.Cache
 	Mux        *http.ServeMux
 	HttpServer *http.Server
@@ -32,15 +32,15 @@ func New(db *sql.DB) *Server {
 
 	srv := &Server{
 		DB:      db,
-		LinkSvc: linkSvc, // the concrete implementations
+		LinkSvc: linkSvc,
 		UserSvc: userSvc,
 		Mux:     mux,
 		cache:   c,
-		HC:      NewHandlerContainer(*linkSvc, *userSvc, c),
 	}
 
+	// Initialize handler container with the server instance
+	srv.HC = NewHandlerContainer(srv)
 	srv.routes()
-
 	// Apply logging middleware globally
 	srv.Handler = utils.LoggingWrap(mux)
 

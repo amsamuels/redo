@@ -4,25 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
-	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/api/handlers"
-	"redo.ai/internal/service/link"
-	"redo.ai/internal/service/user"
 )
 
 type HandlerContainer struct {
 	AuthHandler *handlers.AuthHandler
 	LinkHandler *handlers.LinkHandler
-	Cache       *lru.Cache
 	//MetricsHandler *handlers.MetricsHandler
 }
 
-func NewHandlerContainer(linkSvc link.LinkService, userSvc user.UserService, c *lru.Cache) *HandlerContainer {
+func NewHandlerContainer(srv *Server) *HandlerContainer {
 	return &HandlerContainer{
-		AuthHandler: handlers.NewAuthHandler(userSvc, c),
-		LinkHandler: handlers.NewLinkHandler(linkSvc, c),
-
-		//MetricsHandler: handlers.NewMetricsHandler(linkSvc),
+		AuthHandler: handlers.NewAuthHandler(*srv.UserSvc, srv.cache),
+		LinkHandler: handlers.NewLinkHandler(*srv.LinkSvc, srv.cache),
 	}
 }
 

@@ -13,6 +13,14 @@ type LinkService struct {
 	DB *sql.DB
 }
 
+type LinkService interface {
+	CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) error
+	ResolveLink(ctx context.Context, slug string) (string, error)
+	TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error
+	GetClickCount(ctx context.Context, slug string) (int, error)
+	ListLinks(ctx context.Context, userID string) ([]model.Link, error)
+}
+
 func (s *LinkService) CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error {
 	query := `
         INSERT INTO links (id, company_id, slug, destination, created_at)

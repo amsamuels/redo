@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"redo.ai/internal/api/handlers"
 	"redo.ai/internal/model"
 	"redo.ai/internal/server" // <--- ADD THIS
 )
@@ -42,11 +43,9 @@ func (m *mockLinkService) ListLinks(ctx context.Context, userID string) ([]model
 
 // Test CreateLinkHandler with good and bad inputs
 func TestCreateLinkHandler(t *testing.T) {
+	mockLinkSvc := &mockLinkService{}
 
-	server := &server.Server{
-		LinkSvc: &mockLinkService{},
-	}
-
+	handler := handlers.NewLinkHandler(mockLinkSvc, nil).CreateLinkHandler()
 	handler := server.CreateLinkHandler()
 
 	tests := []struct {

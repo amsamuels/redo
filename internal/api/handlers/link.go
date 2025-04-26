@@ -19,13 +19,12 @@ type LinkHandler struct {
 	Cache       *lru.Cache
 }
 
-func NewLinkHandler(linkService link.LinkService, c *lru.Cache) *LinkHandler {
+func NewLinkHandler(linkService link.LinkService, cache *lru.Cache) *LinkHandler {
 	return &LinkHandler{
 		LinkService: linkService,
-		Cache:       c,
+		Cache:       cache,
 	}
 }
-
 func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -114,7 +113,7 @@ func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
 		}
 
 		// Resolve destination URL (e.g., Spotify track URL)
-		destURL, ok := lh.Cache.cacheGet(slug)
+		destURL, ok := lh.Cache.Get(slug)
 		if !ok {
 			var err error
 			destURL, err = lh.LinkService.ResolveLink(r.Context(), slug)
@@ -122,7 +121,7 @@ func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
 				utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
 				return
 			}
-			s.cacheSet(slug, destURL)
+			lh.Cache.Add(slug, destURL) // Use Add to set the value in the cache
 		}
 
 		// Detect platform

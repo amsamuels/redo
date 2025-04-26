@@ -19,10 +19,10 @@ type AuthHandler struct {
 	Cache       *lru.Cache
 }
 
-func NewAuthHandler(userService user.UserService, c *lru.Cache) *AuthHandler {
+func NewAuthHandler(userService user.UserService, cache *lru.Cache) *AuthHandler {
 	return &AuthHandler{
 		UserService: userService,
-		Cache:       c,
+		Cache:       cache,
 	}
 }
 
