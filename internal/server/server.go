@@ -13,8 +13,8 @@ import (
 
 type Server struct {
 	DB         *sql.DB
-	LinkSvc    *link.LinkService
-	UserSvc    *user.UserService
+	LinkSvc    link.LinkService
+	UserSvc    user.UserService
 	cache      *lru.Cache
 	Mux        *http.ServeMux
 	HttpServer *http.Server
@@ -23,8 +23,8 @@ type Server struct {
 }
 
 func New(db *sql.DB) *Server {
-	linkSvc := &link.LinkService{DB: db}
-	userSvc := &user.UserService{DB: db}
+	linkSvc := &link.LinkSvc{DB: db}
+	userSvc := &user.UserSvc{DB: db}
 
 	mux := http.NewServeMux()
 

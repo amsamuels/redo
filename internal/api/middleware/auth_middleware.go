@@ -18,7 +18,9 @@ import (
 
 type ctxKey string
 
-const userIDKey ctxKey = "user_id"
+const UserIDKey ctxKey = "user_id"
+
+var SubContextKey ctxKey = "sub"
 
 // CustomClaims defines any custom claims you want to use.
 type CustomClaims struct {
@@ -73,7 +75,7 @@ func EnsureValidToken() func(http.Handler) http.Handler {
 func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, ok := r.Context().Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
+			token, ok := r.Context().Value(UserIDKey).(*jwt.Token)
 			if !ok || token == nil {
 				utils.WriteJSONError(w, http.StatusUnauthorized, "missing token")
 				return
@@ -101,7 +103,7 @@ func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -109,6 +111,26 @@ func WithUser(db *sql.DB) func(http.Handler) http.Handler {
 
 // UserIDFromContext retrieves the user ID from the request context.
 func UserIDFromContext(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(userIDKey).(string)
+	id, ok := ctx.Value(UserIDKey).(string)
 	return id, ok
+}
+
+// SubFromContext tries to extract "sub" from either JWT token OR directly as a string for tests.
+func SubFromContext(ctx context.Context) (string, bool) {
+	// Try JWT token first
+	token, ok := ctx.Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
+	if ok && token != nil {
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if sub, ok := claims["sub"].(string); ok {
+				return sub, true
+			}
+		}
+	}
+
+	// Fallback: Check if we stored sub string directly (for unit tests)
+	if sub, ok := ctx.Value(ctxKey("sub")).(string); ok {
+		return sub, true
+	}
+
+	return "", false
 }

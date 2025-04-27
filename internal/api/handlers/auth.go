@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
-	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
-	"github.com/golang-jwt/jwt/v5"
 	lru "github.com/hashicorp/golang-lru"
+	"redo.ai/internal/api/middleware"
 	"redo.ai/internal/model"
 	"redo.ai/internal/service/user"
 	"redo.ai/internal/utils"
@@ -30,14 +28,13 @@ func NewAuthHandler(userService user.UserService, cache *lru.Cache) *AuthHandler
 func (au *AuthHandler) SignUpHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 			return
 		}
 
-		email, ok := SubFromContext(r.Context())
+		email, ok := middleware.SubFromContext(r.Context())
 		if !ok {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Unauthorized")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -73,7 +70,7 @@ func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 			return
 		}
 
-		email, ok := SubFromContext(r.Context())
+		email, ok := middleware.SubFromContext(r.Context())
 		if !ok {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -99,21 +96,4 @@ func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
 	}
-}
-
-// --- Helper ---
-
-func SubFromContext(ctx context.Context) (string, bool) {
-	token, ok := ctx.Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
-	if !ok || token == nil {
-		return "", false
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return "", false
-	}
-
-	sub, ok := claims["sub"].(string)
-	return sub, ok
 }

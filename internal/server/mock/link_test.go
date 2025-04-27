@@ -1,4 +1,4 @@
-package server_test
+package mock
 
 import (
 	"bytes"
@@ -11,13 +11,15 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/api/handlers"
 	"redo.ai/internal/model"
-	// <--- ADD THIS
 )
 
-// Local test version of userIDKey (because we can't import unexported things)
 type ctxKey string
 
-const userIDKey ctxKey = "user_id"
+const UserIDKey ctxKey = "user_id"
+
+var SubContextKey ctxKey = "sub"
+
+// Local test version of userIDKey (because we can't import unexported things)
 
 // Mock LinkService for testing
 type mockLinkService struct{}
@@ -42,12 +44,14 @@ func (m *mockLinkService) ListLinks(ctx context.Context, userID string) ([]model
 	return []model.Link{}, nil
 }
 
-// Test CreateLinkHandler with good and bad inputs
+// TestCreateLinkHandler uses a table-driven format to test various scenarios.
 func TestCreateLinkHandler(t *testing.T) {
-
+	// Create a mock service and cache.
 	mockLinkSvc := &mockLinkService{}
 	cache, _ := lru.New(100) // Mock cache
 	handler := handlers.NewLinkHandler(mockLinkSvc, cache).CreateLinkHandler()
+
+	// Define test cases in a table-driven format.
 	tests := []struct {
 		name           string
 		payload        model.CreateLinkRequest
@@ -92,22 +96,33 @@ func TestCreateLinkHandler(t *testing.T) {
 		},
 	}
 
+	// Iterate over the test cases.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			body, _ := json.Marshal(tt.payload)
+			// Marshal the payload into JSON.
+			body, err := json.Marshal(tt.payload)
+			if err != nil {
+				t.Fatalf("failed to marshal payload: %v", err)
+			}
+
+			// Create a new HTTP request.
 			req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewReader(body))
 
-			// Simulate authenticated context
+			// Simulate authenticated context if required.
 			if tt.authenticated {
-				ctx := context.WithValue(req.Context(), userIDKey, "test-user-id")
+				ctx := context.WithValue(req.Context(), UserIDKey, "test-user-id")
 				req = req.WithContext(ctx)
 			}
 
+			// Create a response recorder to capture the response.
 			rec := httptest.NewRecorder()
+
+			// Serve the HTTP request.
 			handler.ServeHTTP(rec, req)
 
+			// Assert the expected status code.
 			if rec.Code != tt.expectedStatus {
-				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectedStatus, rec.Code)
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, rec.Code)
 			}
 		})
 	}

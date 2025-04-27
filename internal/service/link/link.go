@@ -9,11 +9,20 @@ import (
 	"redo.ai/internal/model"
 )
 
-type LinkService struct {
+// LinkService defines the interface for link-related operations.
+type LinkService interface {
+	CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error
+	ListLinks(ctx context.Context, userID string) ([]model.Link, error)
+	ResolveLink(ctx context.Context, slug string) (string, error)
+	TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error
+	GetClickCount(ctx context.Context, slug string) (int, error)
+}
+
+type LinkSvc struct {
 	DB *sql.DB
 }
 
-func (s *LinkService) CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error {
+func (s *LinkSvc) CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error {
 	query := `
         INSERT INTO links (id, company_id, slug, destination, created_at)
         VALUES (gen_random_uuid(), $1, $2, $3, $4)
@@ -22,7 +31,7 @@ func (s *LinkService) CreateLink(ctx context.Context, companyID string, req mode
 	return err
 }
 
-func (s *LinkService) ListLinks(ctx context.Context, userID string) ([]model.Link, error) {
+func (s *LinkSvc) ListLinks(ctx context.Context, userID string) ([]model.Link, error) {
 	query := `
         SELECT slug, destination, created_at
         FROM links
@@ -47,7 +56,7 @@ func (s *LinkService) ListLinks(ctx context.Context, userID string) ([]model.Lin
 	return links, nil
 }
 
-func (s *LinkService) ResolveLink(ctx context.Context, slug string) (string, error) {
+func (s *LinkSvc) ResolveLink(ctx context.Context, slug string) (string, error) {
 	var destination string
 
 	query := `SELECT destination FROM links WHERE slug = $1`
@@ -59,7 +68,7 @@ func (s *LinkService) ResolveLink(ctx context.Context, slug string) (string, err
 	return destination, nil
 }
 
-func (s *LinkService) TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error {
+func (s *LinkSvc) TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error {
 	query := `
 		INSERT INTO clicks (id, link_id, ip, referrer, user_agent, created_at)
 		SELECT gen_random_uuid(), l.id, $2, $3, $4, now()
@@ -70,7 +79,7 @@ func (s *LinkService) TrackClick(ctx context.Context, slug, ip, referrer, userAg
 	return err
 }
 
-func (s *LinkService) GetClickCount(ctx context.Context, slug string) (int, error) {
+func (s *LinkSvc) GetClickCount(ctx context.Context, slug string) (int, error) {
 	var count int
 
 	query := `
