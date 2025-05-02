@@ -1,21 +1,21 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/api/middleware"
 	"redo.ai/internal/model"
+	"redo.ai/internal/pkg/platform"
 	"redo.ai/internal/service/link"
 	"redo.ai/internal/utils"
 )
 
 type LinkHandler struct {
 	LinkService link.LinkService
+	Platform    platform.PlatformDetector
 	Cache       *lru.Cache
 }
 
@@ -96,57 +96,5 @@ func (lh *LinkHandler) ListLinksHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(links)
-	}
-}
-func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Validate path and slug (existing logic)
-		if !strings.HasPrefix(r.URL.Path, "/go/") {
-			utils.WriteJSONError(w, http.StatusNotFound, "Invalid path")
-			return
-		}
-
-		slug := strings.TrimPrefix(r.URL.Path, "/go/")
-		if slug == "" || !utils.IsValidSlug(slug) {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid slug")
-			return
-		}
-
-		// Resolve destination URL (e.g., Spotify track URL)
-		destURL, ok := lh.Cache.Get(slug)
-		if !ok {
-			var err error
-			destURL, err = lh.LinkService.ResolveLink(r.Context(), slug)
-			if err != nil {
-				utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
-				return
-			}
-			lh.Cache.Add(slug, destURL) // Use Add to set the value in the cache
-		}
-
-		// Detect platform
-		userAgent := r.UserAgent()
-		platform := utils.GetPlatform(userAgent)
-
-		// Generate deep links or universal links
-		var redirectURL string
-		switch platform {
-		case "iOS":
-			redirectURL = fmt.Sprintf("spotify://track/%s", destURL) // Replace with actual track ID
-		case "Android":
-			redirectURL = fmt.Sprintf("intent://track/%s#Intent;scheme=spotify;package=com.spotify.music;end", destURL)
-		default:
-			redirectURL = fmt.Sprintf("https://open.spotify.com/track/%s", destURL) // Fallback to web
-		}
-
-		// Async click tracking
-		go func() {
-			_ = lh.LinkService.TrackClick(context.Background(), slug, r.RemoteAddr, r.Referer(), r.UserAgent())
-		}()
-
-		// Set headers and redirect
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }

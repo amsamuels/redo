@@ -33,7 +33,7 @@ func (c CustomClaims) Validate(ctx context.Context) error {
 
 // EnsureValidToken sets up Auth0 JWT validation middleware.
 func EnsureValidToken() func(http.Handler) http.Handler {
-	issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
+	issuerURL, err := url.Parse(os.Getenv("AUTH0_DOMAIN"))
 	if err != nil {
 		log.Fatalf("Failed to parse issuer URL: %v", err)
 	}
@@ -44,26 +44,35 @@ func EnsureValidToken() func(http.Handler) http.Handler {
 		provider.KeyFunc,
 		validator.RS256,
 		issuerURL.String(),
-		[]string{os.Getenv("AUTH0_AUDIENCE")},
+		[]string{"https://api.mybackend.com"},
 		validator.WithCustomClaims(func() validator.CustomClaims {
 			return &CustomClaims{}
 		}),
 		validator.WithAllowedClockSkew(time.Minute),
 	)
 	if err != nil {
-		log.Fatalf("Failed to set up the JWT validator: %v", err)
-	}
-
-	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Printf("JWT validation error: %v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"message":"Failed to validate JWT."}`))
+		log.Printf("token validation failed: %v", err)
+		log.Fatalf("failed to set up the JWT validator: %v", err)
 	}
 
 	middleware := jwtmiddleware.New(
 		jwtValidator.ValidateToken,
-		jwtmiddleware.WithErrorHandler(errorHandler),
+		jwtmiddleware.WithErrorHandler(func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Printf("JWT validation error: %v", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`{"message":"Failed to validate JWT."}`))
+		}),
+		jwtmiddleware.WithTokenExtractor(func(r *http.Request) (string, error) {
+			raw := r.Header.Get("Authorization")
+			// Strip "Bearer " prefix if present
+			if len(raw) > 7 && raw[:7] == "Bearer " {
+				return raw[7:], nil
+			}
+
+			log.Printf("🔐 Received token: %s", raw)
+			return raw, nil
+		}),
 	)
 
 	return func(next http.Handler) http.Handler {
@@ -115,9 +124,8 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 	return id, ok
 }
 
-// SubFromContext tries to extract "sub" from either JWT token OR directly as a string for tests.
+// SubFromContext extracts standard claims from the JWT.
 func SubFromContext(ctx context.Context) (string, bool) {
-	// Try JWT token first
 	token, ok := ctx.Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
 	if ok && token != nil {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {

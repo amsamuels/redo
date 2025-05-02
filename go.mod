@@ -10,8 +10,7 @@ require (
 )
 
 require (
-	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/hashicorp/golang-lru v1.0.2 // indirect
+	github.com/hashicorp/golang-lru v1.0.2
 	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect

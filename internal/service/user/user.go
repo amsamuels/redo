@@ -10,8 +10,8 @@ import (
 
 // UserService defines the interface for user-related operations.
 type UserService interface {
-	SignUp(ctx context.Context, req model.SignUpRequest) error
-	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	SignUp(context.Context, string, model.SignUpRequest) error
+	GetByID(ctx context.Context, userID string) (*model.User, error)
 }
 
 // Concrete implementation of LinkService.
@@ -19,26 +19,28 @@ type UserSvc struct {
 	DB *sql.DB
 }
 
-func (s *UserSvc) SignUp(ctx context.Context, req model.SignUpRequest) error {
+// SignUp creates a new user with ID from sub and other data from JWT.
+func (s *UserSvc) SignUp(ctx context.Context, userID string, req model.SignUpRequest) error {
 	query := `
-        INSERT INTO users (id, email, name, business_name, created_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4)
+        INSERT INTO users (id, email, name, business_name)
+        VALUES ($1, $2, $3, $4)
     `
-	_, err := s.DB.ExecContext(ctx, query, req.Email, req.Name, req.BusinessName, time.Now())
+	_, err := s.DB.ExecContext(ctx, query, userID, req.Email, req.Name, req.BusinessName)
 	return err
 }
 
-// GetByEmail retrieves a user by email.
-func (s *UserSvc) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+// GetByID retrieves a user by Auth0 sub (stored as ID).
+func (s *UserSvc) GetByID(ctx context.Context, userID string) (*model.User, error) {
 	var user model.User
+	var createdAt time.Time
 
 	query := `
         SELECT id, email, name, business_name, created_at
         FROM users
-        WHERE email = $1
+        WHERE id = $1
     `
-	var createdAt time.Time
-	err := s.DB.QueryRowContext(ctx, query, email).
+
+	err := s.DB.QueryRowContext(ctx, query, userID).
 		Scan(&user.ID, &user.Email, &user.Name, &user.BusinessName, &createdAt)
 	if err != nil {
 		return nil, err

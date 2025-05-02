@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -25,14 +26,18 @@ func NewAuthHandler(userService user.UserService, cache *lru.Cache) *AuthHandler
 }
 
 // SignUpHandler - Creates a new user (requires valid JWT and business name).
+
 func (au *AuthHandler) SignUpHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("📩 Received signup request")
+		log.Println("🔎 Authorization header:", r.Header.Get("Authorization"))
 		if r.Method != http.MethodPost {
 			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 			return
 		}
 
-		email, ok := middleware.SubFromContext(r.Context())
+		userID, ok := middleware.SubFromContext(r.Context())
+		log.Printf("🧪 sub: %s ", userID)
 		if !ok {
 			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
@@ -44,9 +49,7 @@ func (au *AuthHandler) SignUpHandler() http.HandlerFunc {
 			return
 		}
 
-		req.Email = email // Force the email from Auth0 token, ignore any email from body.
-
-		err := au.UserService.SignUp(r.Context(), req)
+		err := au.UserService.SignUp(r.Context(), userID, req)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				utils.WriteJSONError(w, http.StatusConflict, "User already exists")
@@ -66,17 +69,17 @@ func (au *AuthHandler) SignUpHandler() http.HandlerFunc {
 func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 			return
 		}
 
-		email, ok := middleware.SubFromContext(r.Context())
+		sub, ok := middleware.SubFromContext(r.Context())
 		if !ok {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized: invalid token")
 			return
 		}
 
-		user, err := au.UserService.GetByEmail(r.Context(), email)
+		user, err := au.UserService.GetByID(r.Context(), sub)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				utils.WriteJSONError(w, http.StatusUnauthorized, "User not found")

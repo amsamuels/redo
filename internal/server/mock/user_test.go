@@ -21,7 +21,7 @@ type MockUserService struct {
 	ShouldError    bool
 }
 
-func (m *MockUserService) SignUp(ctx context.Context, req model.SignUpRequest) error {
+func (m *MockUserService) SignUp(context.Context, string, model.SignUpRequest) error {
 	if m.ShouldConflict {
 		return sql.ErrNoRows // Simulate "already exists" conflict
 	}
@@ -31,7 +31,7 @@ func (m *MockUserService) SignUp(ctx context.Context, req model.SignUpRequest) e
 	return nil
 }
 
-func (m *MockUserService) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+func (m *MockUserService) GetByID(ctx context.Context, email string) (*model.User, error) {
 	return &model.User{
 		ID:           "mock-id",
 		Email:        email,
@@ -39,6 +39,18 @@ func (m *MockUserService) GetByEmail(ctx context.Context, email string) (*model.
 		BusinessName: "Mock Business",
 		CreatedAt:    "2023-01-01T00:00:00Z",
 	}, nil
+}
+
+func newAuthenticatedRequest(method, url string, body []byte, sub string) *http.Request {
+	req := httptest.NewRequest(method, url, bytes.NewReader(body))
+
+	// If sub is non-empty, inject it into context
+	if sub != "" {
+		ctx := context.WithValue(req.Context(), middleware.SubContextKey, sub)
+		req = req.WithContext(ctx)
+	}
+
+	return req
 }
 
 func TestSignUpHandler(t *testing.T) {
@@ -93,20 +105,59 @@ func TestSignUpHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			handler := handlers.NewAuthHandler(tt.mockService, nil).SignUpHandler()
-
 			body, _ := json.Marshal(tt.payload)
-			req := httptest.NewRequest(http.MethodPost, "/api/users/signup", bytes.NewReader(body))
 
+			sub := ""
 			if tt.authenticated {
-				// MUCH cleaner!
-				ctx := context.WithValue(req.Context(), middleware.SubContextKey, "user@example.com")
-				req = req.WithContext(ctx)
+				sub = "user@example.com"
 			}
+			req := newAuthenticatedRequest(http.MethodPost, "/api/users/signup", body, sub)
 
 			rec := httptest.NewRecorder()
 			handler.ServeHTTP(rec, req)
 
+			if rec.Code != tt.expectedStatus {
+				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectedStatus, rec.Code)
+			}
+		})
+	}
+}
+
+func TestLogInHandler(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		mockService    *MockUserService
+		authenticated  bool
+		subEmail       string
+		expectedStatus int
+	}{
+		{
+			name:           "Valid user login",
+			mockService:    &MockUserService{},
+			authenticated:  true,
+			subEmail:       "user@example.com",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Unauthenticated request (no sub)",
+			mockService:    &MockUserService{},
+			authenticated:  false,
+			subEmail:       "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handlers.NewAuthHandler(tt.mockService, nil).LoginHandler()
+
+			req := newAuthenticatedRequest(http.MethodPost, "/api/users/login", nil, tt.subEmail)
+
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
 			if rec.Code != tt.expectedStatus {
 				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectedStatus, rec.Code)
 			}

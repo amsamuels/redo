@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -28,6 +27,22 @@ func LoggingWrap(next http.Handler) http.Handler {
 	})
 }
 
+func WithCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4040")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		// Respond to preflight OPTIONS requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Helper function to write JSON errors.
 func WriteJSONError(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -42,13 +57,4 @@ func IsValidSlug(slug string) bool {
 func IsValidURL(destination string) bool {
 	_, err := url.ParseRequestURI(destination)
 	return err == nil
-}
-
-func GetPlatform(userAgent string) string {
-	if strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad") {
-		return "iOS"
-	} else if strings.Contains(userAgent, "Android") {
-		return "Android"
-	}
-	return "Web"
 }

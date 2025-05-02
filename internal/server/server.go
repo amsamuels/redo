@@ -41,8 +41,9 @@ func New(db *sql.DB) *Server {
 	// Initialize handler container with the server instance
 	srv.HC = NewHandlerContainer(srv)
 	srv.routes()
+
 	// Apply logging middleware globally
-	srv.Handler = utils.LoggingWrap(mux)
+	srv.Handler = utils.WithCORS(utils.LoggingWrap(mux))
 
 	return srv
 }
