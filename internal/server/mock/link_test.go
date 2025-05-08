@@ -28,8 +28,8 @@ func (m *mockLinkService) CreateLink(ctx context.Context, userID string, req mod
 	return nil // Always succeed
 }
 
-func (m *mockLinkService) ResolveLink(ctx context.Context, slug string) (string, error) {
-	return "https://example.com", nil // Return a fake URL
+func (m *mockLinkService) ResolveLink(ctx context.Context, slug string) (string, string, error) {
+	return "https://example.com", "", nil // Return a fake URL
 }
 
 func (m *mockLinkService) TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error {

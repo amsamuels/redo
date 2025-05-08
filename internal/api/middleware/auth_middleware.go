@@ -2,143 +2,137 @@ package middleware
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
+	"strings"
 	"time"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/pkg/errors"
 	"redo.ai/internal/utils"
 )
 
-type ctxKey string
+const (
+	missingJWTErrorMessage       = "Requires authentication"
+	invalidJWTErrorMessage       = "Bad credentials"
+	permissionDeniedErrorMessage = "Permission denied"
+	notFoundErrorMessage         = "Not Found"
+	internalServerErrorMessage   = "Internal Server Error"
+)
 
-const UserIDKey ctxKey = "user_id"
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
 
-var SubContextKey ctxKey = "sub"
-
-// CustomClaims defines any custom claims you want to use.
 type CustomClaims struct {
-	Scope string `json:"scope"`
+	Permissions []string `json:"permissions"`
 }
 
 func (c CustomClaims) Validate(ctx context.Context) error {
 	return nil
 }
 
-// EnsureValidToken sets up Auth0 JWT validation middleware.
-func EnsureValidToken() func(http.Handler) http.Handler {
-	issuerURL, err := url.Parse(os.Getenv("AUTH0_DOMAIN"))
-	if err != nil {
-		log.Fatalf("Failed to parse issuer URL: %v", err)
+func (c CustomClaims) HasPermissions(expectedClaims []string) bool {
+	if len(expectedClaims) == 0 {
+		return false
 	}
-
-	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
-
-	jwtValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuerURL.String(),
-		[]string{"https://api.mybackend.com"},
-		validator.WithCustomClaims(func() validator.CustomClaims {
-			return &CustomClaims{}
-		}),
-		validator.WithAllowedClockSkew(time.Minute),
-	)
-	if err != nil {
-		log.Printf("token validation failed: %v", err)
-		log.Fatalf("failed to set up the JWT validator: %v", err)
-	}
-
-	middleware := jwtmiddleware.New(
-		jwtValidator.ValidateToken,
-		jwtmiddleware.WithErrorHandler(func(w http.ResponseWriter, r *http.Request, err error) {
-			log.Printf("JWT validation error: %v", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"message":"Failed to validate JWT."}`))
-		}),
-		jwtmiddleware.WithTokenExtractor(func(r *http.Request) (string, error) {
-			raw := r.Header.Get("Authorization")
-			// Strip "Bearer " prefix if present
-			if len(raw) > 7 && raw[:7] == "Bearer " {
-				return raw[7:], nil
-			}
-
-			log.Printf("🔐 Received token: %s", raw)
-			return raw, nil
-		}),
-	)
-
-	return func(next http.Handler) http.Handler {
-		return middleware.CheckJWT(next)
-	}
-}
-
-// WithUser populates the user ID into the request context.
-func WithUser(db *sql.DB) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, ok := r.Context().Value(UserIDKey).(*jwt.Token)
-			if !ok || token == nil {
-				utils.WriteJSONError(w, http.StatusUnauthorized, "missing token")
-				return
-			}
-
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if !ok {
-				utils.WriteJSONError(w, http.StatusUnauthorized, "invalid token claims")
-				return
-			}
-
-			sub, ok := claims["sub"].(string)
-			if !ok || sub == "" {
-				utils.WriteJSONError(w, http.StatusUnauthorized, "missing sub claim")
-				return
-			}
-
-			var userID string
-			err := db.QueryRow(`SELECT id FROM users WHERE email = $1`, sub).Scan(&userID)
-			if err == sql.ErrNoRows {
-				utils.WriteJSONError(w, http.StatusUnauthorized, "user not found")
-				return
-			} else if err != nil {
-				utils.WriteJSONError(w, http.StatusInternalServerError, "database error")
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), UserIDKey, userID)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-// UserIDFromContext retrieves the user ID from the request context.
-func UserIDFromContext(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(UserIDKey).(string)
-	return id, ok
-}
-
-// SubFromContext extracts standard claims from the JWT.
-func SubFromContext(ctx context.Context) (string, bool) {
-	token, ok := ctx.Value(jwtmiddleware.ContextKey{}).(*jwt.Token)
-	if ok && token != nil {
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if sub, ok := claims["sub"].(string); ok {
-				return sub, true
-			}
+	for _, scope := range expectedClaims {
+		if !utils.Contains(c.Permissions, scope) {
+			return false
 		}
 	}
+	return true
+}
 
-	// Fallback: Check if we stored sub string directly (for unit tests)
-	if sub, ok := ctx.Value(ctxKey("sub")).(string); ok {
-		return sub, true
+func ValidatePermissions(expectedClaims []string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
+		claims := token.CustomClaims.(*CustomClaims)
+		if !claims.HasPermissions(expectedClaims) {
+			errorMessage := ErrorMessage{Message: permissionDeniedErrorMessage}
+			if err := utils.WriteJSON(w, http.StatusForbidden, errorMessage); err != nil {
+				log.Printf("Failed to write error message: %v", err)
+			}
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func ValidateJWT(audience, domain string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		issuerURL, err := url.Parse("https://" + domain + "/") // ✅ has trailing slash
+		if err != nil {
+			log.Fatalf("Failed to parse the issuer url: %v", err)
+		}
+
+		provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
+
+		jwtValidator, err := validator.New(
+			provider.KeyFunc,
+			validator.RS256,
+			issuerURL.String(),
+			[]string{audience},
+			validator.WithCustomClaims(func() validator.CustomClaims {
+				return new(CustomClaims)
+			}),
+		)
+		if err != nil {
+			log.Fatalf("Failed to set up the jwt validator")
+		}
+
+		if authHeaderParts := strings.Fields(r.Header.Get("Authorization")); len(authHeaderParts) > 0 && strings.ToLower(authHeaderParts[0]) != "bearer" {
+			errorMessage := ErrorMessage{Message: invalidJWTErrorMessage}
+			if err := utils.WriteJSON(w, http.StatusUnauthorized, errorMessage); err != nil {
+				log.Printf("Failed to write error message: %v", err)
+			}
+			return
+		}
+
+		errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Printf("Encountered error while validating JWT: %v", err)
+			if errors.Is(err, jwtmiddleware.ErrJWTMissing) {
+				errorMessage := ErrorMessage{Message: missingJWTErrorMessage}
+				if err := utils.WriteJSON(w, http.StatusUnauthorized, errorMessage); err != nil {
+					log.Printf("Failed to write error message: %v", err)
+				}
+				return
+			}
+			if errors.Is(err, jwtmiddleware.ErrJWTInvalid) {
+				errorMessage := ErrorMessage{Message: invalidJWTErrorMessage}
+				if err := utils.WriteJSON(w, http.StatusUnauthorized, errorMessage); err != nil {
+					log.Printf("Failed to write error message: %v", err)
+				}
+				return
+			}
+			ServerError(w, err)
+		}
+
+		middleware := jwtmiddleware.New(
+			jwtValidator.ValidateToken,
+			jwtmiddleware.WithErrorHandler(errorHandler),
+		)
+
+		middleware.CheckJWT(next).ServeHTTP(w, r)
+	})
+}
+
+func SubFromContext(ctx context.Context) (string, bool) {
+	token, ok := ctx.Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
+	if !ok {
+		return "", false
 	}
+	return token.RegisteredClaims.Subject, true
+}
 
-	return "", false
+func ServerError(rw http.ResponseWriter, err error) {
+	errorMessage := ErrorMessage{Message: internalServerErrorMessage}
+	werr := utils.WriteJSON(rw, http.StatusInternalServerError, errorMessage)
+	if werr != nil {
+		log.Println("Error writing error message: ", werr.Error())
+	}
+	log.Print("Internal error server: ", err.Error())
 }

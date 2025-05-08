@@ -11,9 +11,9 @@ import (
 
 // LinkService defines the interface for link-related operations.
 type LinkService interface {
-	CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error
+	CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) error
 	ListLinks(ctx context.Context, userID string) ([]model.Link, error)
-	ResolveLink(ctx context.Context, slug string) (string, error)
+	ResolveLink(ctx context.Context, slug string) (string, string, error)
 	TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error
 	GetClickCount(ctx context.Context, slug string) (int, error)
 }
@@ -22,12 +22,12 @@ type LinkSvc struct {
 	DB *sql.DB
 }
 
-func (s *LinkSvc) CreateLink(ctx context.Context, companyID string, req model.CreateLinkRequest) error {
+func (s *LinkSvc) CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) error {
 	query := `
-        INSERT INTO links (id, company_id, slug, destination, created_at)
+        INSERT INTO links (id, user_id, slug, destination, created_at)
         VALUES (gen_random_uuid(), $1, $2, $3, $4)
     `
-	_, err := s.DB.ExecContext(ctx, query, companyID, req.Slug, req.Destination, time.Now())
+	_, err := s.DB.ExecContext(ctx, query, userID, req.Slug, req.Destination, time.Now())
 	return err
 }
 
@@ -56,16 +56,19 @@ func (s *LinkSvc) ListLinks(ctx context.Context, userID string) ([]model.Link, e
 	return links, nil
 }
 
-func (s *LinkSvc) ResolveLink(ctx context.Context, slug string) (string, error) {
-	var destination string
+func (s *LinkSvc) ResolveLink(ctx context.Context, slug string) (string, string, error) {
+	var (
+		linkID      string
+		destination string
+	)
 
-	query := `SELECT destination FROM links WHERE slug = $1`
-	err := s.DB.QueryRowContext(ctx, query, slug).Scan(&destination)
+	query := `SELECT link_id, destination FROM links WHERE slug = $1`
+	err := s.DB.QueryRowContext(ctx, query, slug).Scan(&linkID, &destination)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return destination, nil
+	return destination, linkID, nil
 }
 
 func (s *LinkSvc) TrackClick(ctx context.Context, slug, ip, referrer, userAgent string) error {

@@ -11,6 +11,7 @@ import (
 	"redo.ai/internal/pkg/platform"
 	"redo.ai/internal/service/link"
 	"redo.ai/internal/utils"
+	"redo.ai/logger"
 )
 
 type LinkHandler struct {
@@ -32,24 +33,24 @@ func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 			return
 		}
 
+		logger.Info("recived create link request")
+
 		var req model.CreateLinkRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
+		logger.Info("processing slug:%s & destination:%s", req.Slug, req.Destination)
+
 		// Validate inputs
-		if !utils.IsValidSlug(req.Slug) {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid slug format")
-			return
-		}
-		if !utils.IsValidURL(req.Destination) {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid destination URL")
+		if !utils.IsValidSlug(req.Slug) || !utils.IsValidURL(req.Destination) {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid format")
 			return
 		}
 
 		// Get user ID from context
-		userID, ok := middleware.UserIDFromContext(r.Context())
+		userID, ok := middleware.SubFromContext(r.Context())
 		if !ok {
 			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
@@ -82,7 +83,7 @@ func (lh *LinkHandler) ListLinksHandler() http.HandlerFunc {
 			return
 		}
 
-		userID, ok := middleware.UserIDFromContext(r.Context())
+		userID, ok := middleware.SubFromContext(r.Context())
 		if !ok {
 			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return

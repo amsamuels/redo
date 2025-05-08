@@ -1,0 +1,102 @@
+2025/05/04 20:28:09 log.go:59: [INFO] Server running on :8080
+2025/05/04 20:28:18 log.go:59: [INFO] Server running on :8080
+2025/05/04 20:32:52 log.go:59: [INFO] Starting server on :8080
+2025/05/04 20:32:52 log.go:59: [INFO] Listening on :8080
+2025/05/04 20:33:41 log.go:59: [INFO] Starting server on :8080
+2025/05/04 20:33:41 log.go:59: [INFO] Listening on :8080
+2025/05/04 20:34:02 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/04 20:34:03 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/04 20:34:03 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/04 20:34:03 log.go:59: [INFO] Request completed: POST /api/users/login (686.133079ms)
+2025/05/04 20:34:03 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/04 20:34:03 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/04 20:34:03 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/04 20:34:03 log.go:59: [INFO] Request completed: POST /api/users/login (62.827058ms)
+2025/05/04 20:44:53 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/04 20:44:54 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/04 20:44:54 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/04 20:44:54 log.go:59: [INFO] Request completed: POST /api/users/login (544.434672ms)
+2025/05/04 20:44:54 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/04 20:44:54 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/04 20:44:54 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/04 20:44:54 log.go:59: [INFO] Request completed: POST /api/users/login (65.487055ms)
+2025/05/04 20:44:54 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/04 20:44:54 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/04 20:44:54 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/04 20:44:54 log.go:59: [INFO] Request completed: POST /api/users/login (59.315276ms)
+2025/05/05 18:32:52 log.go:59: [INFO] Starting server on :8080
+2025/05/05 18:32:52 log.go:59: [INFO] Listening on :8080
+2025/05/05 18:33:03 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 18:33:03 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 18:33:04 log.go:59: [INFO] user not found, creating new user sub: google-oauth2|117264203713598003520
+2025/05/05 18:33:04 log.go:59: [INFO] user successfully created sub:google-oauth2|117264203713598003520
+2025/05/05 18:33:04 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 18:33:04 log.go:59: [INFO] Request completed: POST /api/users/login (1.502571519s)
+2025/05/05 18:33:04 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 18:33:04 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 18:33:04 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 18:33:04 log.go:59: [INFO] Request completed: POST /api/users/login (52.806149ms)
+2025/05/05 18:33:04 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 18:33:04 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 18:33:04 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 18:33:04 log.go:59: [INFO] Request completed: POST /api/users/login (61.860716ms)
+2025/05/05 21:25:08 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 21:25:09 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 21:25:09 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 21:25:09 log.go:59: [INFO] Request completed: POST /api/users/login (923.955747ms)
+2025/05/05 21:25:56 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 21:25:57 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 21:25:57 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 21:25:57 log.go:59: [INFO] Request completed: POST /api/users/login (429.324152ms)
+2025/05/05 21:57:44 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 21:57:44 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 21:57:44 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 21:57:44 log.go:59: [INFO] Request completed: POST /api/users/login (715.23336ms)
+2025/05/05 22:19:50 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 22:19:50 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 22:19:50 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 22:19:50 log.go:59: [INFO] Request completed: POST /api/users/login (308.315477ms)
+2025/05/05 22:30:17 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 22:30:17 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 22:30:17 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 22:30:17 log.go:59: [INFO] Request completed: POST /api/users/login (251.203869ms)
+2025/05/05 22:49:59 log.go:59: [INFO] Starting server on :8080
+2025/05/05 22:49:59 log.go:59: [INFO] Listening on :8080
+2025/05/05 22:50:19 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 22:50:19 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 22:50:20 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 22:50:20 log.go:59: [INFO] Request completed: POST /api/users/login (653.038137ms)
+2025/05/05 22:55:11 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/05 22:55:11 log.go:59: [INFO] handling login for subgoogle-oauth2|117264203713598003520
+2025/05/05 22:55:11 log.go:59: [INFO] user authenticated sub:google-oauth2|117264203713598003520, user_id:56c77551-6962-4b3e-9ce3-886ebe88dea9
+2025/05/05 22:55:11 log.go:59: [INFO] Request completed: POST /api/users/login (314.957694ms)
+2025/05/08 20:43:23 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/08 20:43:23 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/08 20:43:23 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/08 20:43:23 log.go:59: [INFO] Request completed: POST /api/users/login (604.404104ms)
+2025/05/08 20:43:24 log.go:59: [INFO] Request started: GET /api/links/create
+2025/05/08 20:43:24 log.go:59: [INFO] Request completed: GET /api/links/create (70.404652ms)
+2025/05/08 20:45:15 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/08 20:45:16 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/08 20:45:16 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/08 20:45:16 log.go:59: [INFO] Request completed: POST /api/users/login (555.352195ms)
+2025/05/08 20:45:16 log.go:59: [INFO] Request started: GET /api/links/create
+2025/05/08 20:45:16 log.go:59: [INFO] Request completed: GET /api/links/create (70.061486ms)
+2025/05/08 20:54:37 log.go:59: [INFO] Request started: POST /api/links
+2025/05/08 20:54:37 log.go:59: [INFO] Request completed: POST /api/links (3.027435ms)
+2025/05/08 21:02:55 log.go:59: [INFO] Starting server on :8080
+2025/05/08 21:02:55 log.go:59: [INFO] Listening on :8080
+2025/05/08 21:03:08 log.go:59: [INFO] Request started: POST /api/links
+2025/05/08 21:03:08 log.go:59: [INFO] Request completed: POST /api/links (53.005µs)
+2025/05/08 21:03:59 log.go:59: [INFO] Starting server on :8080
+2025/05/08 21:03:59 log.go:59: [INFO] Listening on :8080
+2025/05/08 21:04:10 log.go:59: [INFO] Request started: POST /api/links
+2025/05/08 21:04:11 log.go:59: [INFO] recived create link request
+2025/05/08 21:04:11 log.go:59: [INFO] processing slug:my-new & destination:https://www.linkedin.com/in/alex-abiola/
+2025/05/08 21:04:11 log.go:59: [INFO] Request completed: POST /api/links (740.072509ms)
+2025/05/08 21:16:21 log.go:59: [INFO] Request started: POST /api/users/login
+2025/05/08 21:16:22 log.go:59: [INFO] handling login for subgoogle-oauth2|109354400375633616910
+2025/05/08 21:16:22 log.go:59: [INFO] user authenticated sub:google-oauth2|109354400375633616910, user_id:788c81d7-efc8-4090-b9cf-a89148015538
+2025/05/08 21:16:22 log.go:59: [INFO] Request completed: POST /api/users/login (718.998575ms)
+2025/05/08 21:16:22 log.go:59: [INFO] Request started: GET /api/links
+2025/05/08 21:16:22 log.go:59: [INFO] Request completed: GET /api/links (52.348323ms)

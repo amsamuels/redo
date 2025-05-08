@@ -2,24 +2,44 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
 
 	"redo.ai/internal/server"
 	"redo.ai/internal/storage"
+	"redo.ai/logger"
 )
 
 func main() {
+	// Initialize the logger
+	err := logger.Init("program.log")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize logger: %v", err))
+	}
+	defer logger.Close()
+
 	_ = godotenv.Load()
-	db := storage.Connect(os.Getenv("DATABASE_URL"))
+
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		logger.Fatal("DATABASE_URL is not set")
+	}
+
+	db := storage.Connect(dsn)
 	defer db.Close()
 
-	srv := server.New(db)
+	port := os.Getenv("PORT")
+	if port == "" {
+		logger.Fatal("PORT environment variable is not set")
+	}
 
-	log.Println("Server running on :8080")
-	if err := srv.Start(":8080"); err != nil {
-		log.Fatalf("server error: %v", err)
+	srv := server.New(db)
+	fmt.Println("Starting server...")
+	logger.Info("Starting server on :%s", port)
+	if err := srv.Start(port); err != nil {
+		fmt.Printf("Server failed: %v\n", err)
+		logger.Fatal("Server error: %v", err)
 	}
 }

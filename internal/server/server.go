@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -9,6 +10,7 @@ import (
 	"redo.ai/internal/service/link"
 	"redo.ai/internal/service/user"
 	"redo.ai/internal/utils"
+	"redo.ai/logger"
 )
 
 type Server struct {
@@ -48,10 +50,13 @@ func New(db *sql.DB) *Server {
 	return srv
 }
 
-func (s *Server) Start(addr string) error {
+func (s *Server) Start(port string) error {
+	addr := fmt.Sprintf(":%s", port)
+	logger.Info("Listening on %s", addr)
 	s.HttpServer = &http.Server{
 		Addr:    addr,
 		Handler: s.Handler,
 	}
+
 	return s.HttpServer.ListenAndServe()
 }

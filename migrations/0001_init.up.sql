@@ -1,18 +1,27 @@
 -- +migrate Up
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Users table (main entry point)
--- Users table using Auth0 sub (e.g. "auth0|abc123") as primary key
+-- Define enum type for user roles
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    CREATE TYPE user_role AS ENUM ('free', 'pro', 'enterprise', 'admin');
+  END IF;
+END$$;
+
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,             -- Auth0's sub claim (e.g. "auth0|abc123")
-    email TEXT UNIQUE NOT NULL,      -- Unique user email
-    name TEXT NOT NULL,              -- Full name from JWT or signup
-    business_name TEXT NOT NULL,     -- From signup form
-    created_at TIMESTAMPTZ DEFAULT now()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    auth0_sub TEXT UNIQUE NOT NULL,             -- Auth0's unique user ID
+    email TEXT UNIQUE NOT NULL,                 
+    role user_role DEFAULT 'free',              -- Enum role with 'free' as default
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Optional performance index on email for fast lookups
+-- Indexes on users
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_auth0_sub ON users(auth0_sub);
 
 -- Links table
 CREATE TABLE IF NOT EXISTS links (
@@ -20,7 +29,9 @@ CREATE TABLE IF NOT EXISTS links (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     slug TEXT UNIQUE NOT NULL,
     destination TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Clicks table
@@ -32,3 +43,7 @@ CREATE TABLE IF NOT EXISTS clicks (
     user_agent TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Indexes on foreign keys
+CREATE INDEX IF NOT EXISTS idx_links_user_id ON links(user_id);
+CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id);

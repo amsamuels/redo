@@ -25,15 +25,13 @@ func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
 		destURL, ok := lh.Cache.Get(slug)
 		if !ok {
 			var err error
-			destURL, err = lh.LinkService.ResolveLink(r.Context(), slug)
+			destURL, _, err = lh.LinkService.ResolveLink(r.Context(), slug)
 			if err != nil {
 				utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
 				return
 			}
 			lh.Cache.Add(slug, destURL) // Use Add to set the value in the cache
 		}
-
-		// Detect platform
 
 		// Detect platform + service
 		userAgent := r.UserAgent()

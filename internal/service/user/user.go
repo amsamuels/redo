@@ -10,38 +10,59 @@ import (
 
 // UserService defines the interface for user-related operations.
 type UserService interface {
-	SignUp(context.Context, string, model.SignUpRequest) error
-	GetByID(ctx context.Context, userID string) (*model.User, error)
+	SignUp(context.Context, string, string) (*model.User, error)
+	GetByID(ctx context.Context, auth0Sub string) (*model.User, error)
 }
 
-// Concrete implementation of LinkService.
+// Concrete implementation of UserService.
 type UserSvc struct {
 	DB *sql.DB
 }
 
-// SignUp creates a new user with ID from sub and other data from JWT.
-func (s *UserSvc) SignUp(ctx context.Context, userID string, req model.SignUpRequest) error {
-	query := `
-        INSERT INTO users (id, email, name, business_name)
-        VALUES ($1, $2, $3, $4)
-    `
-	_, err := s.DB.ExecContext(ctx, query, userID, req.Email, req.Name, req.BusinessName)
-	return err
-}
-
-// GetByID retrieves a user by Auth0 sub (stored as ID).
-func (s *UserSvc) GetByID(ctx context.Context, userID string) (*model.User, error) {
+// SignUp creates a new user with only the Auth0 sub (no PII).
+func (s *UserSvc) SignUp(ctx context.Context, auth0Sub, email string) (*model.User, error) {
 	var user model.User
 	var createdAt time.Time
+	var tmpAuth0Sub string // Placeholder for auth0_sub
 
 	query := `
-        SELECT id, email, name, business_name, created_at
+        INSERT INTO users (auth0_sub, email)
+        VALUES ($1, $2)
+    `
+	err := s.DB.QueryRowContext(ctx, query, auth0Sub).Scan(
+		&user.UserID, // string
+		&tmpAuth0Sub, // ignored
+		&user.Role,   // string
+		&createdAt,   // time.Time
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user.CreatedAt = createdAt.Format(time.RFC3339)
+	return &user, nil
+}
+
+// GetByID retrieves a user by Auth0 sub and returns the user with string ID.
+func (s *UserSvc) GetByID(ctx context.Context, auth0Sub string) (*model.User, error) {
+	var user model.User
+	var createdAt time.Time
+	var tmpAuth0Sub string // Placeholder for auth0_sub
+
+	query := `
+        SELECT id::text, auth0_sub, role, created_at
         FROM users
-        WHERE id = $1
+        WHERE auth0_sub = $1
     `
 
-	err := s.DB.QueryRowContext(ctx, query, userID).
-		Scan(&user.ID, &user.Email, &user.Name, &user.BusinessName, &createdAt)
+	err := s.DB.QueryRowContext(ctx, query, auth0Sub).Scan(
+		&user.UserID,
+		&tmpAuth0Sub, // Ignored
+		&user.Role,
+		&createdAt,
+	)
+
 	if err != nil {
 		return nil, err
 	}
