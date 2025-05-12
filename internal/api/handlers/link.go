@@ -5,27 +5,45 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	lru "github.com/hashicorp/golang-lru"
 	"redo.ai/internal/api/middleware"
 	"redo.ai/internal/model"
 	"redo.ai/internal/pkg/platform"
 	"redo.ai/internal/service/link"
+	"redo.ai/internal/service/user"
 	"redo.ai/internal/utils"
 	"redo.ai/logger"
 )
 
 type LinkHandler struct {
 	LinkService link.LinkService
+	UserService user.UserService
 	Platform    platform.PlatformDetector
 	Cache       *lru.Cache
 }
 
-func NewLinkHandler(linkService link.LinkService, cache *lru.Cache) *LinkHandler {
+func NewLinkHandler(userService user.UserService, linkService link.LinkService, cache *lru.Cache) *LinkHandler {
 	return &LinkHandler{
 		LinkService: linkService,
+		UserService: userService,
 		Cache:       cache,
 	}
 }
+
+func (lh *LinkHandler) LinksRouter() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			lh.CreateLinkHandler().ServeHTTP(w, r)
+		case http.MethodGet:
+			lh.ListLinksHandler().ServeHTTP(w, r)
+		default:
+			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		}
+	}
+}
+
 func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -33,7 +51,30 @@ func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 			return
 		}
 
+		// get sub from context
+		_, ok := middleware.SubFromContext(r.Context())
+		if !ok {
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
 		logger.Info("recived create link request")
+
+		userID := r.Header.Get("X-User-ID")
+		if userID == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
+			return
+		}
+
+		if _, err := uuid.Parse(userID); err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
+			return
+		}
+
+		// Check if user exists (if not enforced by DB foreign key)
+		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
+			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
+		}
 
 		var req model.CreateLinkRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -46,13 +87,6 @@ func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 		// Validate inputs
 		if !utils.IsValidSlug(req.Slug) || !utils.IsValidURL(req.Destination) {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid format")
-			return
-		}
-
-		// Get user ID from context
-		userID, ok := middleware.SubFromContext(r.Context())
-		if !ok {
-			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -83,10 +117,26 @@ func (lh *LinkHandler) ListLinksHandler() http.HandlerFunc {
 			return
 		}
 
-		userID, ok := middleware.SubFromContext(r.Context())
+		_, ok := middleware.SubFromContext(r.Context())
 		if !ok {
 			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
+		}
+
+		userID := r.Header.Get("X-User-ID")
+		if userID == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
+			return
+		}
+
+		if _, err := uuid.Parse(userID); err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
+			return
+		}
+
+		// Check if user exists (if not enforced by DB foreign key)
+		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
+			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
 		}
 
 		links, err := lh.LinkService.ListLinks(r.Context(), userID)

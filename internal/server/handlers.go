@@ -16,7 +16,7 @@ type HandlerContainer struct {
 func NewHandlerContainer(srv *Server) *HandlerContainer {
 	return &HandlerContainer{
 		AuthHandler: handlers.NewAuthHandler(srv.UserSvc, srv.cache),
-		LinkHandler: handlers.NewLinkHandler(srv.LinkSvc, srv.cache),
+		LinkHandler: handlers.NewLinkHandler(srv.UserSvc, srv.LinkSvc, srv.cache),
 	}
 }
 

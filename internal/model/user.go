@@ -5,7 +5,6 @@ type SignUpRequest struct {
 }
 
 type User struct {
-	UserID    string `json:"id"`
-	Role      string `json:"role"`
-	CreatedAt string `json:"created_at"`
+	UserID string `json:"id"`
+	Role   string `json:"role"`
 }

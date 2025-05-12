@@ -24,6 +24,28 @@ var SubContextKey ctxKey = "sub"
 // Mock LinkService for testing
 type mockLinkService struct{}
 
+// DeleteLink implements link.LinkService.
+func (m *mockLinkService) DeleteLink(ctx context.Context, linkID string) error {
+	panic("unimplemented")
+}
+
+type mockUserService struct{}
+
+// GetByID implements user.UserService.
+func (m *mockUserService) GetByID(ctx context.Context, auth0Sub string) (*model.User, error) {
+	panic("unimplemented")
+}
+
+// SignUp implements user.UserService.
+func (m *mockUserService) SignUp(context.Context, string, string) (*model.User, error) {
+	panic("unimplemented")
+}
+
+// UserExists implements user.UserService.
+func (m *mockUserService) UserExists(ctx context.Context, userID string) (bool, error) {
+	panic("unimplemented")
+}
+
 func (m *mockLinkService) CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) error {
 	return nil // Always succeed
 }
@@ -48,8 +70,9 @@ func (m *mockLinkService) ListLinks(ctx context.Context, userID string) ([]model
 func TestCreateLinkHandler(t *testing.T) {
 	// Create a mock service and cache.
 	mockLinkSvc := &mockLinkService{}
+	mockUserSvc := &mockUserService{}
 	cache, _ := lru.New(100) // Mock cache
-	handler := handlers.NewLinkHandler(mockLinkSvc, cache).CreateLinkHandler()
+	handler := handlers.NewLinkHandler(mockUserSvc, mockLinkSvc, cache).CreateLinkHandler()
 
 	// Define test cases in a table-driven format.
 	tests := []struct {

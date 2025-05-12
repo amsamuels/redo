@@ -15,7 +15,7 @@ func (s *Server) routes() {
 	s.Mux.Handle("/api/user", middleware.ValidateJWT("https://api.mybackend.com", "dev-omr1iha4te137r50.us.auth0.com", hc.AuthHandler.LoginHandler()))
 
 	//Link-related (protected by auth)
-	s.Mux.Handle("/api/links", middleware.ValidateJWT("https://api.mybackend.com", "dev-omr1iha4te137r50.us.auth0.com", hc.LinkHandler.CreateLinkHandler()))
+	s.Mux.Handle("/api/links", middleware.ValidateJWT("https://api.mybackend.com", "dev-omr1iha4te137r50.us.auth0.com", hc.LinkHandler.LinksRouter()))
 	// s.Mux.Handle("/api/links/list", auth(withUser(hc.LinkHandler.ListLinksHandler())))
 	//s.Mux.Handle("/api/links/", auth(withUser(hc.LinkHandler.GetMetricsHandler())))
 }
