@@ -772,3 +772,170 @@
 2025/05/12 22:47:20 log.go:59: [INFO] Request completed: GET /api/links (54.656455ms)
 2025/05/12 22:48:32 log.go:59: [INFO] Starting server on :8080
 2025/05/12 22:48:32 log.go:59: [INFO] Listening on :8080
+2025/05/12 23:03:22 log.go:59: [INFO] Starting server on :8080
+2025/05/12 23:03:22 log.go:59: [INFO] Listening on :8080
+2025/05/12 23:04:01 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:02 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:02 log.go:59: [INFO] User authenticated and cached for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:02 log.go:59: [INFO] Request completed: GET /api/user (635.237226ms)
+2025/05/12 23:04:02 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:02 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:02 log.go:59: [INFO] Request completed: GET /api/user (61.870418ms)
+2025/05/12 23:04:02 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:02 log.go:59: [INFO] Request completed: GET /api/links (78.602592ms)
+2025/05/12 23:04:02 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:02 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:02 log.go:59: [INFO] Request completed: GET /api/user (52.047303ms)
+2025/05/12 23:04:02 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:02 log.go:59: [INFO] Request completed: GET /api/links (56.054903ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:03 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/user (54.905173ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/links (63.299084ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:03 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/user (60.058522ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/links (53.525151ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:03 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/user (52.934895ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/links (80.431962ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:04:03 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/user (74.737376ms)
+2025/05/12 23:04:03 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:04:03 log.go:59: [INFO] Request completed: GET /api/links (58.888599ms)
+2025/05/12 23:05:25 log.go:59: [INFO] Starting server on :8080
+2025/05/12 23:05:25 log.go:59: [INFO] Listening on :8080
+2025/05/12 23:19:31 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:32 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:32 log.go:59: [INFO] User authenticated and cached for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/user (886.333518ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:32 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/user (56.884938ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/links (76.996167ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:32 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/user (49.636189ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/links (58.249806ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:32 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/user (45.726358ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:32 log.go:59: [INFO] Request completed: GET /api/links (46.891345ms)
+2025/05/12 23:19:32 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:33 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/user (48.251144ms)
+2025/05/12 23:19:33 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/links (44.980546ms)
+2025/05/12 23:19:33 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:33 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/user (59.791064ms)
+2025/05/12 23:19:33 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/links (47.94343ms)
+2025/05/12 23:19:33 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:19:33 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/user (46.428759ms)
+2025/05/12 23:19:33 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:19:33 log.go:59: [INFO] Request completed: GET /api/links (53.982934ms)
+2025/05/12 23:20:45 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:20:46 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:20:46 log.go:59: [INFO] Request completed: GET /api/user (385.791467ms)
+2025/05/12 23:20:46 log.go:59: [INFO] Request started: DELETE /api/links
+2025/05/12 23:20:46 log.go:59: [INFO] Request completed: DELETE /api/links (115.324371ms)
+2025/05/12 23:24:35 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:35 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:35 log.go:59: [INFO] Request completed: GET /api/user (506.92199ms)
+2025/05/12 23:24:36 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:36 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:36 log.go:59: [INFO] Request completed: GET /api/user (50.568302ms)
+2025/05/12 23:24:36 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:36 log.go:59: [INFO] Request completed: GET /api/links (72.298226ms)
+2025/05/12 23:24:36 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:37 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/user (46.804936ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/links (52.54341ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:37 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/user (68.522016ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/links (51.652583ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:37 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/user (46.221627ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/links (47.886378ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:37 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/user (46.308525ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/links (49.874755ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:24:37 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/user (47.003807ms)
+2025/05/12 23:24:37 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:24:37 log.go:59: [INFO] Request completed: GET /api/links (47.985157ms)
+2025/05/12 23:28:51 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:28:52 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:28:52 log.go:59: [INFO] Request completed: GET /api/user (607.718174ms)
+2025/05/12 23:28:52 log.go:59: [INFO] Request started: POST /api/links
+2025/05/12 23:28:52 log.go:59: [INFO] recived create link request
+2025/05/12 23:28:52 log.go:59: [INFO] processing slug:my-linkedin & destination:https://www.linkedin.com/in/alex-abiola/
+2025/05/12 23:28:52 log.go:59: [INFO] Request completed: POST /api/links (195.246249ms)
+2025/05/12 23:29:49 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:50 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/user (379.134503ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:50 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/user (73.050205ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/links (195.955282ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:50 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/user (55.944141ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/links (53.299843ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:50 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:50 log.go:59: [INFO] Request completed: GET /api/user (61.263931ms)
+2025/05/12 23:29:50 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/links (51.885182ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:51 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/user (47.396933ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/links (49.810198ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:51 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/user (52.211638ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/links (73.485886ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:29:51 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/user (47.74139ms)
+2025/05/12 23:29:51 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:29:51 log.go:59: [INFO] Request completed: GET /api/links (52.271708ms)
+2025/05/12 23:30:11 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:30:11 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:30:11 log.go:59: [INFO] Request completed: GET /api/user (387.304481ms)
+2025/05/12 23:30:11 log.go:59: [INFO] Request started: DELETE /api/links
+2025/05/12 23:30:11 log.go:59: [INFO] Request completed: DELETE /api/links (74.762717ms)
+2025/05/12 23:30:11 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:30:11 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:30:11 log.go:59: [INFO] Request completed: GET /api/user (52.897721ms)
+2025/05/12 23:30:11 log.go:59: [INFO] Request started: GET /api/links
+2025/05/12 23:30:11 log.go:59: [INFO] Request completed: GET /api/links (54.785814ms)
+2025/05/12 23:30:19 log.go:59: [INFO] Request started: GET /api/user
+2025/05/12 23:30:19 log.go:59: [INFO] Handling login for sub: google-oauth2|117264203713598003520
+2025/05/12 23:30:19 log.go:59: [INFO] Request completed: GET /api/user (56.083402ms)
+2025/05/12 23:30:19 log.go:59: [INFO] Request started: POST /api/links
+2025/05/12 23:30:19 log.go:59: [INFO] recived create link request
+2025/05/12 23:30:19 log.go:59: [INFO] processing slug:my-linkedin & destination:https://www.linkedin.com/in/alex-abiola/
+2025/05/12 23:30:19 log.go:59: [INFO] Request completed: POST /api/links (54.256051ms)

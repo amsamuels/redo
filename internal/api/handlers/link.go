@@ -38,6 +38,8 @@ func (lh *LinkHandler) LinksRouter() http.HandlerFunc {
 			lh.CreateLinkHandler().ServeHTTP(w, r)
 		case http.MethodGet:
 			lh.ListLinksHandler().ServeHTTP(w, r)
+		case http.MethodDelete:
+			lh.DeleteLinkHandler().ServeHTTP(w, r)
 		default:
 			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
@@ -147,5 +149,50 @@ func (lh *LinkHandler) ListLinksHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(links)
+	}
+}
+
+func (lh *LinkHandler) DeleteLinkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			return
+		}
+
+		_, ok := middleware.SubFromContext(r.Context())
+		if !ok {
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		userID := r.Header.Get("X-User-ID")
+		if userID == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
+			return
+		}
+
+		if _, err := uuid.Parse(userID); err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
+			return
+		}
+
+		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
+			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
+			return
+		}
+
+		// Assume link ID is passed as a query param like ?linkId=abc123
+		linkID := r.URL.Query().Get("linkId")
+		if linkID == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing linkId")
+			return
+		}
+
+		if err := lh.LinkService.DeleteLink(r.Context(), linkID); err != nil {
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to delete link")
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

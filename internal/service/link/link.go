@@ -117,6 +117,7 @@ func (s *LinkSvc) DeleteLink(ctx context.Context, linkID string) error {
 	var err error
 	checkQuery := `SELECT EXISTS(SELECT 1 FROM links WHERE id = $1)`
 	if err := s.DB.QueryRowContext(ctx, checkQuery, linkID).Scan(&exists); err != nil || !exists {
+		logger.Error("error: [%s] with link with ID %s does not exist", err, linkID)
 		return fmt.Errorf("error: [%s] with link with ID %s does not exist", err, linkID)
 	}
 
@@ -125,6 +126,7 @@ func (s *LinkSvc) DeleteLink(ctx context.Context, linkID string) error {
 
 	_, err = s.DB.ExecContext(ctx, deleteQuery, linkID)
 	if err != nil {
+		logger.Error("error: [%s] failed to delete link: %s", err, linkID)
 		return fmt.Errorf("failed to delete link: %w", err)
 	}
 
