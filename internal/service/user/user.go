@@ -26,8 +26,9 @@ func (s *UserSvc) SignUp(ctx context.Context, auth0Sub, email string) (*model.Us
 	query := `
         INSERT INTO users (auth0_sub, email)
         VALUES ($1, $2)
+        RETURNING user_id, role
     `
-	err := s.DB.QueryRowContext(ctx, query, auth0Sub).Scan(
+	err := s.DB.QueryRowContext(ctx, query, auth0Sub, email).Scan(
 		&user.UserID,
 		&user.Role,
 	)

@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -53,6 +55,13 @@ func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 		if err != nil {
 			if err == sql.ErrNoRows {
 				logger.Info("User not found in DB, creating new user for sub: %s", sub)
+
+				bodyBytes, _ := io.ReadAll(r.Body)
+
+				logger.Info("Signup request body for sub %s: %s", sub, string(bodyBytes))
+
+				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 				// 3. If the user doesn't exit sign them up
 				var user model.SignUpRequest
 				if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -60,7 +69,7 @@ func (au *AuthHandler) LoginHandler() http.HandlerFunc {
 					utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request body")
 					return
 				}
-
+				logger.Info("Signup request email for sub %s: %s", sub, user.Email)
 				userData, err = au.UserService.SignUp(r.Context(), sub, user.Email)
 				if err != nil {
 					logger.Error("Failed to create user for sub: %s, error: %v", sub, err)

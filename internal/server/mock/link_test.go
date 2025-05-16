@@ -25,7 +25,12 @@ var SubContextKey ctxKey = "sub"
 type mockLinkService struct{}
 
 // DeleteLink implements link.LinkService.
-func (m *mockLinkService) DeleteLink(ctx context.Context, linkID string) error {
+func (m *mockLinkService) DeleteLink(ctx context.Context, userID string, linkID string) error {
+	panic("unimplemented")
+}
+
+// ResolveUserSlug implements link.LinkService.
+func (m *mockLinkService) ResolveUserSlug(ctx context.Context, userID string, slug string) (model.Link, error) {
 	panic("unimplemented")
 }
 
@@ -46,8 +51,8 @@ func (m *mockUserService) UserExists(ctx context.Context, userID string) (bool, 
 	panic("unimplemented")
 }
 
-func (m *mockLinkService) CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) error {
-	return nil // Always succeed
+func (m *mockLinkService) CreateLink(ctx context.Context, userID string, req model.CreateLinkRequest) (model.Link, error) {
+	return model.Link{}, nil // Always succeed
 }
 
 func (m *mockLinkService) ResolveLink(ctx context.Context, slug string) (string, string, error) {

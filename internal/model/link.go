@@ -1,7 +1,6 @@
 package model
 
 type CreateLinkRequest struct {
-	UserID      string `json:"id"`
 	Slug        string `json:"slug"`
 	Destination string `json:"destination"`
 }
@@ -9,6 +8,8 @@ type CreateLinkRequest struct {
 type Link struct {
 	LinkID      string `json:"id"`
 	Slug        string `json:"slug"`
+	ShortCode   string `json:"short_code"`
+	Is_active   bool   `json:"is_active"`
 	Destination string `json:"destination"`
 	CreatedAt   string `json:"created_at"`
 }

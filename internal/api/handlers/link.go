@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/google/uuid"
 	lru "github.com/hashicorp/golang-lru"
-	"redo.ai/internal/api/middleware"
 	"redo.ai/internal/model"
 	"redo.ai/internal/pkg/platform"
 	"redo.ai/internal/service/link"
@@ -37,7 +35,13 @@ func (lh *LinkHandler) LinksRouter() http.HandlerFunc {
 		case http.MethodPost:
 			lh.CreateLinkHandler().ServeHTTP(w, r)
 		case http.MethodGet:
-			lh.ListLinksHandler().ServeHTTP(w, r)
+			if r.URL.Query().Has("id") {
+				lh.GetLinkHandler().ServeHTTP(w, r)
+			} else {
+				lh.ListLinksHandler().ServeHTTP(w, r)
+			}
+		case http.MethodPut:
+			lh.UpdateLinkHandler().ServeHTTP(w, r)
 		case http.MethodDelete:
 			lh.DeleteLinkHandler().ServeHTTP(w, r)
 		default:
@@ -48,34 +52,18 @@ func (lh *LinkHandler) LinksRouter() http.HandlerFunc {
 
 func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		if !validateMethod(w, r, http.MethodPost) {
 			return
 		}
-
-		// get sub from context
-		_, ok := middleware.SubFromContext(r.Context())
+		if _, ok := verifySubFromContext(w, r); !ok {
+			return
+		}
+		userID, ok := extractUserIDFromRequest(w, r)
 		if !ok {
-			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-
-		logger.Info("recived create link request")
-
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
+		if !checkUserExists(r.Context(), lh.UserService, w, userID) {
 			return
-		}
-
-		if _, err := uuid.Parse(userID); err != nil {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
-			return
-		}
-
-		// Check if user exists (if not enforced by DB foreign key)
-		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
-			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
 		}
 
 		var req model.CreateLinkRequest
@@ -83,116 +71,179 @@ func (lh *LinkHandler) CreateLinkHandler() http.HandlerFunc {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-
-		logger.Info("processing slug:%s & destination:%s", req.Slug, req.Destination)
-
-		// Validate inputs
-		if !utils.IsValidSlug(req.Slug) || !utils.IsValidURL(req.Destination) {
+		if (req.Slug != "" && !utils.IsValidSlug(req.Slug)) || !utils.IsValidURL(req.Destination) {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid format")
 			return
 		}
 
-		// Save link
-		if err := lh.LinkService.CreateLink(r.Context(), userID, req); err != nil {
+		lk, err := lh.LinkService.CreateLink(r.Context(), userID, req)
+		if err != nil {
+			if err == link.ErrSlugAlreadyExists {
+				utils.WriteJSONError(w, http.StatusConflict, "Slug already exists")
+				return
+			}
 			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to create link")
 			return
 		}
 
-		// Build the full masked URL
-		maskedURL := fmt.Sprintf("https://%s/go/%s", r.Host, req.Slug)
+		if cached, ok := lh.Cache.Get(userID); ok {
+			if links, ok := cached.([]model.Link); ok {
+				lh.Cache.Add(userID, append(links, lk))
+			}
+		}
 
-		// Respond with the masked link
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Location", maskedURL)
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{
-			"message": "Link created successfully",
-			"link":    maskedURL,
-		})
 	}
 }
 
 func (lh *LinkHandler) ListLinksHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		if !validateMethod(w, r, http.MethodGet) {
 			return
 		}
-
-		_, ok := middleware.SubFromContext(r.Context())
+		if _, ok := verifySubFromContext(w, r); !ok {
+			return
+		}
+		userID, ok := extractUserIDFromRequest(w, r)
 		if !ok {
-			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
+		if !checkUserExists(r.Context(), lh.UserService, w, userID) {
 			return
 		}
-
-		if _, err := uuid.Parse(userID); err != nil {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
-			return
+		if cached, ok := lh.Cache.Get(userID); ok {
+			if links, ok := cached.([]model.Link); ok {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(links)
+				return
+			}
 		}
-
-		// Check if user exists (if not enforced by DB foreign key)
-		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
-			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
-		}
-
 		links, err := lh.LinkService.ListLinks(r.Context(), userID)
 		if err != nil {
+			logger.Error("ListLinksHandler: failed to fetch links: %v", err)
 			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to fetch links")
 			return
 		}
-
+		lh.Cache.Add(userID, links)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(links)
+		_ = json.NewEncoder(w).Encode(links)
 	}
 }
 
 func (lh *LinkHandler) DeleteLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodDelete {
-			utils.WriteJSONError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		if !validateMethod(w, r, http.MethodDelete) {
 			return
 		}
-
-		_, ok := middleware.SubFromContext(r.Context())
+		if _, ok := verifySubFromContext(w, r); !ok {
+			return
+		}
+		userID, ok := extractUserIDFromRequest(w, r)
 		if !ok {
-			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Missing X-User-ID")
-			return
-		}
-
-		if _, err := uuid.Parse(userID); err != nil {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid X-User-ID format")
-			return
-		}
-
-		if exists, err := lh.UserService.UserExists(r.Context(), userID); err != nil || !exists {
-			utils.WriteJSONError(w, http.StatusBadRequest, "UserID does not exist")
-			return
-		}
-
-		// Assume link ID is passed as a query param like ?linkId=abc123
 		linkID := r.URL.Query().Get("linkId")
-		if linkID == "" {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Missing linkId")
+		if linkID == "" || !IsValidUUID(linkID) {
+			logger.Error("DeleteLinkHandler: Invalid or missing link ID")
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid or missing link ID")
 			return
 		}
-
-		if err := lh.LinkService.DeleteLink(r.Context(), linkID); err != nil {
-			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to delete link")
+		if err := lh.LinkService.DeleteLink(r.Context(), userID, linkID); err != nil {
+			if err == link.ErrLinkNotFound {
+				logger.Error("DeleteLinkHandler: link not found or unauthorized: %v", err)
+				utils.WriteJSONError(w, http.StatusNotFound, "Link not found or unauthorized")
+			} else {
+				logger.Error("DeleteLinkHandler: failed to delete links: %v", err)
+				utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to delete link")
+			}
 			return
 		}
-
+		logger.Info("link deleted")
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (lh *LinkHandler) UpdateLinkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		utils.WriteJSONError(w, http.StatusNotImplemented, "Update link not implemented yet")
+	}
+}
+func (lh *LinkHandler) GetLinkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !validateMethod(w, r, http.MethodGet) {
+			return
+		}
+		if _, ok := verifySubFromContext(w, r); !ok {
+			return
+		}
+		userID, ok := extractUserIDFromRequest(w, r)
+		if !ok {
+			return
+		}
+		linkID := r.URL.Query().Get("id")
+		if linkID == "" || !IsValidUUID(linkID) {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid or missing link ID")
+			return
+		}
+		links, err := lh.LinkService.ListLinks(r.Context(), userID)
+		if err != nil {
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to retrieve links")
+			return
+		}
+		for _, link := range links {
+			if link.LinkID == linkID {
+				_ = json.NewEncoder(w).Encode(link)
+				return
+			}
+		}
+		utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
+	}
+}
+
+func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		shortCode := strings.TrimPrefix(r.URL.Path, "/r/")
+		if shortCode == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing short code")
+			return
+		}
+		go func() {
+			ip := r.RemoteAddr
+			ref := r.Referer()
+			ua := r.UserAgent()
+			_ = lh.LinkService.TrackClick(r.Context(), shortCode, ip, ref, ua)
+		}()
+		destination, _, err := lh.LinkService.ResolveLink(r.Context(), shortCode)
+		if err == link.ErrLinkNotFound {
+			utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
+			return
+		} else if err != nil {
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Could not resolve link")
+			return
+		}
+		http.Redirect(w, r, destination, http.StatusFound)
+	}
+}
+
+func (lh *LinkHandler) ClickCountHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !validateMethod(w, r, http.MethodGet) {
+			return
+		}
+		shortCode := r.URL.Query().Get("short_code")
+		if shortCode == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing short_code")
+			return
+		}
+		count, err := lh.LinkService.GetClickCount(r.Context(), shortCode)
+		if err != nil {
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to get click count")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]int{
+			"click_count": count,
+		})
 	}
 }
