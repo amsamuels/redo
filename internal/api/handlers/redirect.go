@@ -1,5 +1,13 @@
 package handlers
 
+import (
+	"net/http"
+	"strings"
+
+	"redo.ai/internal/service/link"
+	"redo.ai/internal/utils"
+)
+
 // func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
 // 		// Validate path and slug (existing logic)
@@ -44,3 +52,28 @@ package handlers
 // 		http.Redirect(w, r, redirectURL, http.StatusFound)
 // 	}
 // }
+
+func (lh *LinkHandler) RedirectHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		shortCode := strings.TrimPrefix(r.URL.Path, "/r/")
+		if shortCode == "" {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Missing short code")
+			return
+		}
+		go func() {
+			ip := r.RemoteAddr
+			ref := r.Referer()
+			ua := r.UserAgent()
+			_ = lh.LinkService.TrackClick(r.Context(), shortCode, ip, ref, ua)
+		}()
+		destination, _, err := lh.LinkService.ResolveLink(r.Context(), shortCode)
+		if err == link.ErrLinkNotFound {
+			utils.WriteJSONError(w, http.StatusNotFound, "Link not found")
+			return
+		} else if err != nil {
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Could not resolve link")
+			return
+		}
+		http.Redirect(w, r, destination, http.StatusFound)
+	}
+}

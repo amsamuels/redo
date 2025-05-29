@@ -77,7 +77,7 @@ func TestCreateLinkHandler(t *testing.T) {
 	mockLinkSvc := &mockLinkService{}
 	mockUserSvc := &mockUserService{}
 	cache, _ := lru.New(100) // Mock cache
-	handler := handlers.NewLinkHandler(mockUserSvc, mockLinkSvc, cache).CreateLinkHandler()
+	handler := handlers.NewLinkHandler(mockUserSvc, mockLinkSvc, cache).LinksRouter()
 
 	// Define test cases in a table-driven format.
 	tests := []struct {

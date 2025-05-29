@@ -21,7 +21,7 @@ type LinkService interface {
 	ResolveLink(ctx context.Context, shortCode string) (string, string, error)
 	ResolveUserSlug(ctx context.Context, userID string, slug string) (model.Link, error)
 	TrackClick(ctx context.Context, shortCode, ip, referrer, userAgent string) error
-	GetClickCount(ctx context.Context, shortCode string) (int, error)
+	//GetClickCount(ctx context.Context, shortCode string) (int, error)
 	DeleteLink(ctx context.Context, userID, linkID string) error
 }
 
@@ -57,7 +57,7 @@ func (s *LinkSvc) CreateLink(ctx context.Context, userID string, req model.Creat
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			if pqErr.Constraint == "unique_user_slug" {
-				logger.Warn("CreateLink: duplicate slug for userID=%s: %s", userID, req.Slug)
+				logger.Error("CreateLink: duplicate slug for userID=%s: %s", userID, req.Slug)
 				return model.Link{}, ErrSlugAlreadyExists
 			}
 		}
@@ -77,12 +77,16 @@ func (s *LinkSvc) CreateLink(ctx context.Context, userID string, req model.Creat
 
 func (s *LinkSvc) ListLinks(ctx context.Context, userID string) ([]model.Link, error) {
 	var links []model.Link = make([]model.Link, 0)
+
 	query := `
-        SELECT id::text, slug, short_code, destination, created_at, is_active
-        FROM links
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-    `
+    SELECT l.id::text, l.slug, l.short_code, l.destination, l.created_at, l.is_active,
+	COUNT(c.id) AS click_count
+    FROM links l
+    LEFT JOIN clicks c ON c.link_id = l.id
+    WHERE l.user_id = $1
+    GROUP BY l.id
+    ORDER BY l.created_at DESC
+	`
 
 	rows, err := s.DB.QueryContext(ctx, query, userID)
 	if err != nil {
@@ -93,7 +97,7 @@ func (s *LinkSvc) ListLinks(ctx context.Context, userID string) ([]model.Link, e
 
 	for rows.Next() {
 		var link model.Link
-		if err := rows.Scan(&link.LinkID, &link.Slug, &link.ShortCode, &link.Destination, &link.CreatedAt, &link.Is_active); err != nil {
+		if err := rows.Scan(&link.LinkID, &link.Slug, &link.ShortCode, &link.Destination, &link.CreatedAt, &link.Is_active, &link.ClickCount); err != nil {
 			logger.Error("ListLinks: row scan failed: %v", err)
 			return links, fmt.Errorf("scan failed: %w", err)
 		}
@@ -166,24 +170,6 @@ func (s *LinkSvc) TrackClick(ctx context.Context, shortCode, ip, referrer, userA
 		return ErrLinkNotFound
 	}
 	return nil
-}
-
-func (s *LinkSvc) GetClickCount(ctx context.Context, shortCode string) (int, error) {
-	var count int
-
-	query := `
-		SELECT COUNT(*)
-		FROM clicks c
-		JOIN links l ON c.link_id = l.id
-		WHERE l.short_code = $1
-	`
-	err := s.DB.QueryRowContext(ctx, query, shortCode).Scan(&count)
-	if err != nil {
-		logger.Error("GetClickCount: query failed for short_code=%s: %v", shortCode, err)
-		return 0, fmt.Errorf("get click count failed: %w", err)
-	}
-
-	return count, nil
 }
 
 func (s *LinkSvc) DeleteLink(ctx context.Context, userID, linkID string) error {
